@@ -29,7 +29,7 @@
 #define CONDITIONALS_POST_H
 
   #define IS_SCARA (ENABLED(MORGAN_SCARA) || ENABLED(MAKERARM_SCARA))
-  #define IS_KINEMATIC (ENABLED(DELTA) || IS_SCARA)
+  #define IS_KINEMATIC (ENABLED(DELTA) || IS_SCARA || ENABLED(HANGPRINTER))
   #define IS_CARTESIAN !IS_KINEMATIC
 
   /**
@@ -47,7 +47,7 @@
     #define Y_BED_SIZE Y_MAX_LENGTH
   #endif
 
-  // Require 0,0 bed center for Delta and SCARA
+  // Require 0,0 bed center for Delta, SCARA, and HANGPRINTER
   #if IS_KINEMATIC
     #define BED_CENTER_AT_0_0
   #endif
@@ -117,7 +117,7 @@
   #ifdef MANUAL_X_HOME_POS
     #define X_HOME_POS MANUAL_X_HOME_POS
   #elif ENABLED(BED_CENTER_AT_0_0)
-    #if ENABLED(DELTA)
+    #if (ENABLED(DELTA) || ENABLED(HANGPRINTER))
       #define X_HOME_POS 0
     #else
       #define X_HOME_POS ((X_BED_SIZE) * (X_HOME_DIR) * 0.5)
@@ -133,7 +133,7 @@
   #ifdef MANUAL_Y_HOME_POS
     #define Y_HOME_POS MANUAL_Y_HOME_POS
   #elif ENABLED(BED_CENTER_AT_0_0)
-    #if ENABLED(DELTA)
+    #if (ENABLED(DELTA) || ENABLED(HANGPRINTER))
       #define Y_HOME_POS 0
     #else
       #define Y_HOME_POS ((Y_BED_SIZE) * (Y_HOME_DIR) * 0.5)
@@ -688,6 +688,28 @@
     #define X_SENSORLESS (ENABLED(X_IS_TMC2130) && defined(X_HOMING_SENSITIVITY))
     #define Y_SENSORLESS (ENABLED(Y_IS_TMC2130) && defined(Y_HOMING_SENSITIVITY))
     #define Z_SENSORLESS (ENABLED(Z_IS_TMC2130) && defined(Z_HOMING_SENSITIVITY))
+  #endif
+
+  #if ENABLED(HANGPRINTER)
+    #define HAS_A_ENABLE      (PIN_EXISTS(A_ENABLE))
+    #define HAS_A_DIR         (PIN_EXISTS(A_DIR))
+    #define HAS_A_STEP        (PIN_EXISTS(A_STEP))
+    #define HAS_A_MICROSTEPS  (PIN_EXISTS(A_MS1))
+
+    #define HAS_B_ENABLE      (PIN_EXISTS(B_ENABLE))
+    #define HAS_B_DIR         (PIN_EXISTS(B_DIR))
+    #define HAS_B_STEP        (PIN_EXISTS(B_STEP))
+    #define HAS_B_MICROSTEPS  (PIN_EXISTS(B_MS1))
+
+    #define HAS_C_ENABLE      (PIN_EXISTS(C_ENABLE))
+    #define HAS_C_DIR         (PIN_EXISTS(C_DIR))
+    #define HAS_C_STEP        (PIN_EXISTS(C_STEP))
+    #define HAS_C_MICROSTEPS  (PIN_EXISTS(C_MS1))
+
+    #define HAS_D_ENABLE      (PIN_EXISTS(D_ENABLE))
+    #define HAS_D_DIR         (PIN_EXISTS(D_DIR))
+    #define HAS_D_STEP        (PIN_EXISTS(D_STEP))
+    #define HAS_D_MICROSTEPS  (PIN_EXISTS(D_MS1))
   #endif
 
   // Endstops and bed probe
@@ -1300,6 +1322,19 @@
 
   #if ENABLED(SDCARD_SORT_ALPHA)
     #define HAS_FOLDER_SORTING (FOLDER_SORTING || ENABLED(SDSORT_GCODE))
+  #endif
+
+/**
+   * MOV_AXIS: number of independent axes driving the tool head's translational movement
+   * NUM_AXIS: number of movement axes + 1
+   * NUM_AXIS_N: number of movement axes + number of extruders (defined elsewhere)
+   */
+  #if ENABLED(HANGPRINTER)
+    #define MOV_AXIS 4
+    #define NUM_AXIS 5
+  #else
+    #define MOV_AXIS 3
+    #define NUM_AXIS 4
   #endif
 
 #endif // CONDITIONALS_POST_H

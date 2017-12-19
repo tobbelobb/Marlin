@@ -75,6 +75,9 @@ enum BlockFlag : char {
 typedef struct {
 
   uint8_t flag;                             // Block flags (See BlockFlag enum above)
+  #if ENABLED(UNREGISTERED_MOVE_SUPPORT)
+    bool count_it;
+  #endif
 
   unsigned char active_extruder;            // The extruder to move (if E move)
 
@@ -165,18 +168,30 @@ class Planner {
                                                       // May be auto-adjusted by a filament width sensor
     #endif
 
-    static float max_feedrate_mm_s[XYZE_N],         // Max speeds in mm per second
-                 axis_steps_per_mm[XYZE_N],
-                 steps_to_mm[XYZE_N];
-    static uint32_t max_acceleration_steps_per_s2[XYZE_N],
-                    max_acceleration_mm_per_s2[XYZE_N]; // Use M201 to override
+    static float max_feedrate_mm_s[NUM_AXIS_N],         // Max speeds in mm per second
+                 axis_steps_per_mm[NUM_AXIS_N],
+                 steps_to_mm[NUM_AXIS_N];
+    static uint32_t max_acceleration_steps_per_s2[NUM_AXIS_N],
+                    max_acceleration_mm_per_s2[NUM_AXIS_N]; // Use M201 to override
+
+    #if ENABLED(LINE_BUILDUP_COMPENSATION_FEATURE)
+      /*
+       * Parameters for calculating target[]
+       * See buildup compensation theory:
+       *   https://vitana.se/opr3d/tbear/2017.html#hangprinter_project_29
+       */
+      static float k0[MOV_AXIS],
+                   k1[MOV_AXIS],
+                   k2[MOV_AXIS],
+                   sqrtk1[MOV_AXIS];
+    #endif
 
     static uint32_t min_segment_time_us; // Use 'M205 B<µs>' to override
     static float min_feedrate_mm_s,
                  acceleration,         // Normal acceleration mm/s^2  DEFAULT ACCELERATION for all printing moves. M204 SXXXX
                  retract_acceleration, // Retract acceleration mm/s^2 filament pull-back and push-forward while standing still in the other axes M204 TXXXX
                  travel_acceleration,  // Travel acceleration mm/s^2  DEFAULT ACCELERATION for all NON printing moves. M204 MXXXX
-                 max_jerk[XYZE],       // The largest speed change requiring no acceleration
+                 max_jerk[NUM_AXIS],       // The largest speed change requiring no acceleration
                  min_travel_feedrate_mm_s;
 
     #if HAS_LEVELING
@@ -196,7 +211,7 @@ class Planner {
     #endif
 
     #if HAS_POSITION_FLOAT
-      static float position_float[XYZE];
+      static float position_float[NUM_AXIS];
     #endif
 
     #if ENABLED(SKEW_CORRECTION)
@@ -392,6 +407,9 @@ class Planner {
       #define ARG_X float rx
       #define ARG_Y float ry
       #define ARG_Z float rz
+      #if ENABLED(HANGPRINTER)
+        #define ARG_E1 float re1
+      #endif
 
       /**
        * Apply leveling to transform a cartesian position
@@ -406,6 +424,9 @@ class Planner {
       #define ARG_X const float &rx
       #define ARG_Y const float &ry
       #define ARG_Z const float &rz
+      #if ENABLED(HANGPRINTER)
+        #define ARG_E1 const float &re1
+      #endif
 
     #endif
 
@@ -417,14 +438,17 @@ class Planner {
      *  target      - target position in steps units
      *  fr_mm_s     - (target) speed of the move
      *  extruder    - target extruder
-     *  millimeters - the length of the movement, if known
+     *  millimeters - the length of the movement
      */
-    static void _buffer_steps(const int32_t (&target)[XYZE]
-      #if HAS_POSITION_FLOAT
-        , const float (&target_float)[XYZE]
-      #endif
-      , float fr_mm_s, const uint8_t extruder, const float &millimeters=0.0
-    );
+    static void _buffer_steps(const int32_t (&target)[NUM_AXIS]
+                              #if HAS_POSITION_FLOAT
+                                , const float (&target_float)[NUM_AXIS]
+                              #endif
+                              , float fr_mm_s, const uint8_t extruder, const float &millimeters
+                              #if ENABLED(UNREGISTERED_MOVE_SUPPORT)
+                                , bool count_it
+                              #endif
+                             );
 
     /**
      * Planner::buffer_segment
@@ -433,14 +457,28 @@ class Planner {
      *
      * Leveling and kinematics should be applied ahead of calling this.
      *
-     *  a,b,c,e     - target positions in mm and/or degrees
-     *  fr_mm_s     - (target) speed of the move
-     *  extruder    - target extruder
+     *  a,b,c,e   - target positions in mm and/or degrees
+     *              (for Hangprinter: a,b,c,d,e)
+     *  fr_mm_s   - (target) speed of the move
+     *  extruder  - target extruder
      *  millimeters - the length of the movement, if known
+     *  count_it  - specify if printer should remember this move in its counters (only if UNREGISTERED_MOVE_SUPPORT enabled)
      */
-    static void buffer_segment(const float &a, const float &b, const float &c, const float &e, const float &fr_mm_s, const uint8_t extruder, const float &millimeters=0.0);
+    static void buffer_segment(const float &a, const float &b, const float &c
+                               #if ENABLED(HANGPRINTER)
+                                 , const float &d
+                               #endif
+                               , const float &e, const float &fr_mm_s, const uint8_t extruder, const float &millimeters=0.0
+                               #if ENABLED(UNREGISTERED_MOVE_SUPPORT)
+                                 , bool count_it = true
+                               #endif
+                               );
 
-    static void _set_position_mm(const float &a, const float &b, const float &c, const float &e);
+    static void _set_position_mm(const float &a, const float &b, const float &c
+                                 #if ENABLED(HANGPRINTER)
+                                   , const float &d
+                                 #endif
+                                 , const float &e);
 
     /**
      * Add a new linear movement to the buffer.
@@ -451,15 +489,24 @@ class Planner {
      * (Cartesians may also call buffer_line_kinematic.)
      *
      *  rx,ry,rz,e   - target position in mm or degrees
+     *                 (rx,ry,rz,re1 for Hangprinter)
      *  fr_mm_s      - (target) speed of the move (mm/s)
      *  extruder     - target extruder
      *  millimeters  - the length of the movement, if known
      */
-    FORCE_INLINE static void buffer_line(ARG_X, ARG_Y, ARG_Z, const float &e, const float &fr_mm_s, const uint8_t extruder, const float millimeters = 0.0) {
+    FORCE_INLINE static void buffer_line(ARG_X, ARG_Y, ARG_Z
+                                         #if ENABLED(HANGPRINTER)
+                                           , ARG_E1
+                                         #endif
+                                         , const float &e, const float &fr_mm_s, const uint8_t extruder, const float millimeters = 0.0) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(rx, ry, rz);
       #endif
-      buffer_segment(rx, ry, rz, e, fr_mm_s, extruder, millimeters);
+      buffer_segment(rx, ry, rz
+                     #if ENABLED(HANGPRINTER)
+                       , re1
+                     #endif
+                     , e, fr_mm_s, extruder, millimeters);
     }
 
     /**
@@ -481,9 +528,13 @@ class Planner {
       #endif
       #if IS_KINEMATIC
         inverse_kinematics(raw);
-        buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], cart[E_AXIS], fr_mm_s, extruder, millimeters);
+        #if ENABLED(HANGPRINTER)
+          buffer_segment(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], cart[E_CART], fr_mm_s, extruder, millimeters);
+        #else
+          buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], cart[E_CART], fr_mm_s, extruder, millimeters);
+        #endif
       #else
-        buffer_segment(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS], cart[E_AXIS], fr_mm_s, extruder, millimeters);
+        buffer_segment(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS], cart[E_CART], fr_mm_s, extruder, millimeters);
       #endif
     }
 
@@ -496,11 +547,19 @@ class Planner {
      *
      * Clears previous speed values.
      */
-    FORCE_INLINE static void set_position_mm(ARG_X, ARG_Y, ARG_Z, const float &e) {
+    FORCE_INLINE static void set_position_mm(ARG_X, ARG_Y, ARG_Z
+                                             #if ENABLED(HANGPRINTER)
+                                               , ARG_E1
+                                             #endif
+                                             , const float &e) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(rx, ry, rz);
       #endif
-      _set_position_mm(rx, ry, rz, e);
+      _set_position_mm(rx, ry, rz
+                       #if ENABLED(HANGPRINTER)
+                         , re1
+                       #endif
+                       , e);
     }
     static void set_position_mm_kinematic(const float (&cart)[XYZE]);
     static void set_position_mm(const AxisEnum axis, const float &v);

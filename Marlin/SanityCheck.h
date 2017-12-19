@@ -430,6 +430,8 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
 #if ENABLED(BABYSTEPPING)
   #if ENABLED(SCARA)
     #error "BABYSTEPPING is not implemented for SCARA yet."
+  #elif ENABLED(HANGPRINTER)
+    #error "BABYSTEPPING is not implemented for HANGPRINTER."
   #elif ENABLED(DELTA) && ENABLED(BABYSTEP_XY)
     #error "BABYSTEPPING only implemented for Z axis on deltabots."
   #elif ENABLED(BABYSTEP_ZPROBE_OFFSET) && ENABLED(MESH_BED_LEVELING)
@@ -494,6 +496,9 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
  */
 #if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU) && ENABLED(DELTA)
   #error "INDIVIDUAL_AXIS_HOMING_MENU is incompatible with DELTA kinematics."
+#endif
+#if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU) && ENABLED(HANGPRINTER)
+  #error "INDIVIDUAL_AXIS_HOMING_MENU is incompatible with HANGPRINTER kinematics."
 #endif
 
 /**
@@ -651,6 +656,7 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
  * Allow only one kinematic type to be defined
  */
 #if 1 < 0 \
+  + ENABLED(HANGPRINTER) \
   + ENABLED(DELTA) \
   + ENABLED(MORGAN_SCARA) \
   + ENABLED(MAKERARM_SCARA) \
@@ -660,7 +666,7 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
   + ENABLED(COREYX) \
   + ENABLED(COREZX) \
   + ENABLED(COREZY)
-  #error "Please enable only one of DELTA, MORGAN_SCARA, MAKERARM_SCARA, COREXY, COREYX, COREXZ, COREZX, COREYZ, or COREZY."
+  #error "Please enable only one of HANGPRINTER, DELTA, MORGAN_SCARA, MAKERARM_SCARA, COREXY, COREYX, COREXZ, COREZX, COREYZ, or COREZY."
 #endif
 
 /**
@@ -679,6 +685,51 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
     #elif GRID_MAX_POINTS_X < 3
       #error "DELTA requires GRID_MAX_POINTS_X and GRID_MAX_POINTS_Y to be 3 or higher."
     #endif
+  #endif
+#endif
+
+/**
+ * Hangprinter requirements
+ */
+#if ENABLED(HANGPRINTER) && EXTRUDERS > 4
+  #error "Marlin supports a maximum of 4 EXTRUDERS when driving a Hangprinter."
+#endif
+#if ENABLED(HANGPRINTER) && ENABLED(CONVENTIONAL_GEOMETRY)
+  #if ANCHOR_A_Y > 0
+    #error "ANCHOR_A_Y should be negative by convention."
+  #endif
+  #if ANCHOR_B_X*ANCHOR_C_X > 0
+    #error "ANCHOR_B_X and ANCHOR_C_X should have opposite signs by convention."
+  #endif
+  #if ANCHOR_B_Y < 0
+    #error "ANCHOR_B_Y should be positive by convention."
+  #endif
+  #if ANCHOR_C_Y < 0
+    #error "ANCHOR_C_Y should be positive by convention."
+  #endif
+  #if ANCHOR_A_Z > 0
+    #error "ANCHOR_A_Z should be negative by convention."
+  #endif
+  #if ANCHOR_B_Z > 0
+    #error "ANCHOR_B_Z should be negative by convention."
+  #endif
+  #if ANCHOR_C_Z > 0
+    #error "ANCHOR_C_Z should be negative by convention."
+  #endif
+  #if ANCHOR_D_Z < 0
+    #error "ANCHOR_D_Z should be positive by convention."
+  #endif
+#endif
+#if ENABLED(LINE_BUILDUP_COMPENSATION_FEATURE) && DISABLED(HANGPRINTER)
+  #error "LINE_BUILDUP_COMPENSATION_FEATURE can only be used together with HANGPRINTER."
+#endif
+
+/**
+ * Mechaduino requirements
+ */
+#if ENABLED(MECHADUINO_I2C_COMMANDS)
+  #if DISABLED(EXPERIMENTAL_I2CBUS)
+    #error "MECHADUINO_I2C_COMMANDS requires EXPERIMENTAL_I2CBUS to be enabled."
   #endif
 #endif
 
@@ -1649,17 +1700,23 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
 #endif
 
 /**
- * Require 4 or more elements in per-axis initializers
+ * Require 5/4 or more elements in per-axis initializers
  */
 constexpr float sanity_arr_1[] = DEFAULT_AXIS_STEPS_PER_UNIT,
                 sanity_arr_2[] = DEFAULT_MAX_FEEDRATE,
                 sanity_arr_3[] = DEFAULT_MAX_ACCELERATION;
-static_assert(COUNT(sanity_arr_1) >= XYZE, "DEFAULT_AXIS_STEPS_PER_UNIT requires 4 (or more) elements.");
-static_assert(COUNT(sanity_arr_2) >= XYZE, "DEFAULT_MAX_FEEDRATE requires 4 (or more) elements.");
-static_assert(COUNT(sanity_arr_3) >= XYZE, "DEFAULT_MAX_ACCELERATION requires 4 (or more) elements.");
-static_assert(COUNT(sanity_arr_1) <= XYZE_N, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements.");
-static_assert(COUNT(sanity_arr_2) <= XYZE_N, "DEFAULT_MAX_FEEDRATE has too many elements.");
-static_assert(COUNT(sanity_arr_3) <= XYZE_N, "DEFAULT_MAX_ACCELERATION has too many elements.");
+#if ENABLED(HANGPRINTER)
+  static_assert(COUNT(sanity_arr_1) >= NUM_AXIS, "DEFAULT_AXIS_STEPS_PER_UNIT requires 5 (or more) elements when HANGPRINTER is enabled.");
+  static_assert(COUNT(sanity_arr_2) >= NUM_AXIS, "DEFAULT_MAX_FEEDRATE requires 5 (or more) elements when HANGPRINTER is enabled.");
+  static_assert(COUNT(sanity_arr_3) >= NUM_AXIS, "DEFAULT_MAX_ACCELERATION requires 5 (or more) elements when HANGPRINTER is enabled.");
+#else
+  static_assert(COUNT(sanity_arr_1) >= NUM_AXIS, "DEFAULT_AXIS_STEPS_PER_UNIT requires 4 (or more) elements.");
+  static_assert(COUNT(sanity_arr_2) >= NUM_AXIS, "DEFAULT_MAX_FEEDRATE requires 4 (or more) elements.");
+  static_assert(COUNT(sanity_arr_3) >= NUM_AXIS, "DEFAULT_MAX_ACCELERATION requires 4 (or more) elements.");
+#endif
+static_assert(COUNT(sanity_arr_1) <= NUM_AXIS_N, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements.");
+static_assert(COUNT(sanity_arr_2) <= NUM_AXIS_N, "DEFAULT_MAX_FEEDRATE has too many elements.");
+static_assert(COUNT(sanity_arr_3) <= NUM_AXIS_N, "DEFAULT_MAX_ACCELERATION has too many elements.");
 
 /**
  * Sanity checks for Spindle / Laser
