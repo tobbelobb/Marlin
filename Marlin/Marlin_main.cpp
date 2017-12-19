@@ -420,12 +420,17 @@ static const char *injected_commands_P = NULL;
  * but the planner and stepper like mm/s units.
  */
 static const float homing_feedrate_mm_s[] PROGMEM = {
-  #if ENABLED(DELTA)
-    MMM_TO_MMS(HOMING_FEEDRATE_Z), MMM_TO_MMS(HOMING_FEEDRATE_Z),
+  #if ENABLED(HANGPRINTER)
+    MMM_TO_MMS(DUMMY_HOMING_FEEDRATE), MMM_TO_MMS(DUMMY_HOMING_FEEDRATE),
+    MMM_TO_MMS(DUMMY_HOMING_FEEDRATE), MMM_TO_MMS(DUMMY_HOMING_FEEDRATE), 0
   #else
-    MMM_TO_MMS(HOMING_FEEDRATE_XY), MMM_TO_MMS(HOMING_FEEDRATE_XY),
+    #if ENABLED(DELTA)
+      MMM_TO_MMS(HOMING_FEEDRATE_Z), MMM_TO_MMS(HOMING_FEEDRATE_Z),
+    #else
+      MMM_TO_MMS(HOMING_FEEDRATE_XY), MMM_TO_MMS(HOMING_FEEDRATE_XY),
+    #endif
+    MMM_TO_MMS(HOMING_FEEDRATE_Z), 0
   #endif
-  MMM_TO_MMS(HOMING_FEEDRATE_Z), 0
 };
 FORCE_INLINE float homing_feedrate(const AxisEnum a) { return pgm_read_float(&homing_feedrate_mm_s[a]); }
 

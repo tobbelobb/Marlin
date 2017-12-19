@@ -23,10 +23,16 @@
 #ifndef MACROS_H
 #define MACROS_H
 
-#define NUM_AXIS 4
-#define XYZE 4
-#define ABC  3
-#define XYZ  3
+#if defined(HANGPRINTER) // ENABLED macro not defined yet...
+  #define NUM_AXIS 5
+#else
+  #define NUM_AXIS 4
+#endif
+#define XYZ   3
+#define XYZE  4
+#define ABC   3
+#define ABCD  4
+#define ABCDE 5
 
 #define _XMIN_ 100
 #define _YMIN_ 200
