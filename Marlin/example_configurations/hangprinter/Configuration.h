@@ -428,6 +428,7 @@
 #define HANGPRINTER
 #if ENABLED(HANGPRINTER)
   #define HANGPRINTER_SEGMENTS_PER_SECOND 40
+  #define HANGPRINTER_PRINTABLE_RADIUS 1500.0
   // All anchor position coordinates must be floating point, so always have a decimal point in them.
   #define ANCHOR_A_X 0.0
   #define ANCHOR_A_Y -2163.0
@@ -439,9 +440,6 @@
   #define ANCHOR_C_Y 1404.0
   #define ANCHOR_C_Z -75.5
   #define ANCHOR_D_Z 3250.5
-
-  #define NUM_AXIS 5 // The axis order: A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS
-  #define DIRS 4
 
   // If you want the experimental line buildup compensation feature with your Hangprinter, uncomment this.
   //#define EXPERIMENTAL_LINE_BUILDUP_COMPENSATION_FEATURE
@@ -458,7 +456,7 @@
   #define ACTION_POINTS_D 3
 
   /* ----- This many: -----*/
-  const int nr_of_lines_in_direction[DIRS] = {MECHANICAL_ADVANTAGE_A*ACTION_POINTS_A,
+  const int nr_of_lines_in_direction[ABCD] = {MECHANICAL_ADVANTAGE_A*ACTION_POINTS_A,
                                               MECHANICAL_ADVANTAGE_B*ACTION_POINTS_B,
                                               MECHANICAL_ADVANTAGE_C*ACTION_POINTS_C,
                                               MECHANICAL_ADVANTAGE_D*ACTION_POINTS_D};
@@ -470,16 +468,16 @@
   // Total length of lines on each spool
   // Default assumes all nine lines are cut to length 7500 mm.
   // Change to whatever length you have cut your different lines to.
-  const float MOUNTED_LINE[DIRS] = { 7500.0, 7500.0, 7500.0, 7500.0 };
+  const float MOUNTED_LINE[ABCD] = { 7500.0, 7500.0, 7500.0, 7500.0 };
 
   // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
-  const float SPOOL_RADII[DIRS] = { 50.0, 50.0, 50.0, 50.0 };
+  const float SPOOL_RADII[ABCD] = { 50.0, 50.0, 50.0, 50.0 };
 
   // Motor gear teeth: 10
   // Sandwich gear teeth: 100
   // Steps per motor revolution: 3200 (that is, 1/16 microstepping a motor with 200 full steps per revolution)
   // ==> Steps per spool radian = 3200/(2*pi*10/100) = 5093.0
-  const float STEPS_PER_SPOOL_RADIAN[DIRS] = { 5093.0, 5093.0, 5093.0, 5093.0 };
+  const float STEPS_PER_SPOOL_RADIAN[ABCD] = { 5093.0, 5093.0, 5093.0, 5093.0 };
 
   // If you want the experimental auto calibration feature with your Hangprinter, uncomment this.
   #define EXPERIMENTAL_AUTO_CALIBRATION_FEATURE
@@ -716,7 +714,7 @@
 #define XY_PROBE_SPEED 4000
 
 // Speed for the first approach when double-probing (MULTIPLE_PROBING == 2)
-#define Z_PROBE_SPEED_FAST HOMING_FEEDRATE_Z
+#define Z_PROBE_SPEED_FAST DUMMY_HOMING_FEEDRATE
 
 // Speed for the "accurate" probe of each point
 #define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST / 2)
@@ -737,12 +735,12 @@
   // if servo actuated touch probe is not defined. Uncomment as appropriate for your printer/probe.
 
   #define Z_PROBE_ALLEN_KEY_DEPLOY_1_X 30.0
-  #define Z_PROBE_ALLEN_KEY_DEPLOY_1_Y DELTA_PRINTABLE_RADIUS
+  #define Z_PROBE_ALLEN_KEY_DEPLOY_1_Y HANGPRINTER_PRINTABLE_RADIUS
   #define Z_PROBE_ALLEN_KEY_DEPLOY_1_Z 100.0
   #define Z_PROBE_ALLEN_KEY_DEPLOY_1_FEEDRATE XY_PROBE_SPEED
 
   #define Z_PROBE_ALLEN_KEY_DEPLOY_2_X 0.0
-  #define Z_PROBE_ALLEN_KEY_DEPLOY_2_Y DELTA_PRINTABLE_RADIUS
+  #define Z_PROBE_ALLEN_KEY_DEPLOY_2_Y HANGPRINTER_PRINTABLE_RADIUS
   #define Z_PROBE_ALLEN_KEY_DEPLOY_2_Z 100.0
   #define Z_PROBE_ALLEN_KEY_DEPLOY_2_FEEDRATE (XY_PROBE_SPEED)/10
 
@@ -845,23 +843,23 @@
 
 // Direction of endstops when homing; 1=MAX, -1=MIN
 // :[-1,1]
-#define X_HOME_DIR 1  // deltas always home to max
+#define X_HOME_DIR 1  // Doesn't make sense for Hangprinter since it doesn't move while homing
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
 
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE ((DELTA_PRINTABLE_RADIUS) * 2)
-#define Y_BED_SIZE ((DELTA_PRINTABLE_RADIUS) * 2)
+#define X_BED_SIZE ((HANGPRINTER_PRINTABLE_RADIUS) * 2)
+#define Y_BED_SIZE ((HANGPRINTER_PRINTABLE_RADIUS) * 2)
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
-#define X_MIN_POS -(DELTA_PRINTABLE_RADIUS)
-#define Y_MIN_POS -(DELTA_PRINTABLE_RADIUS)
+#define X_MIN_POS -(HANGPRINTER_PRINTABLE_RADIUS)
+#define Y_MIN_POS -(HANGPRINTER_PRINTABLE_RADIUS)
 #define Z_MIN_POS 0
-#define X_MAX_POS DELTA_PRINTABLE_RADIUS
-#define Y_MAX_POS DELTA_PRINTABLE_RADIUS
-#define Z_MAX_POS MANUAL_Z_HOME_POS
+#define X_MAX_POS HANGPRINTER_PRINTABLE_RADIUS
+#define Y_MAX_POS HANGPRINTER_PRINTABLE_RADIUS
+#define Z_MAX_POS (ANCHOR_D_Z - 300.0)
 
 /**
  * Software Endstops
@@ -961,7 +959,7 @@
   //#define ENABLE_LEVELING_FADE_HEIGHT
 
   // Set the boundaries for probing (where the probe can reach).
-  #define DELTA_PROBEABLE_RADIUS (DELTA_PRINTABLE_RADIUS - 10)
+  #define HANGPRINTER_PROBEABLE_RADIUS (HANGPRINTER_PRINTABLE_RADIUS - 10)
 
 
   // For Cartesian machines, instead of dividing moves on mesh boundaries,
@@ -990,10 +988,10 @@
   #define GRID_MAX_POINTS_X 9
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
-  #define LEFT_PROBE_BED_POSITION -(DELTA_PROBEABLE_RADIUS)
-  #define RIGHT_PROBE_BED_POSITION DELTA_PROBEABLE_RADIUS
-  #define FRONT_PROBE_BED_POSITION -(DELTA_PROBEABLE_RADIUS)
-  #define BACK_PROBE_BED_POSITION DELTA_PROBEABLE_RADIUS
+  #define LEFT_PROBE_BED_POSITION -(HANGPRINTER_PROBEABLE_RADIUS)
+  #define RIGHT_PROBE_BED_POSITION HANGPRINTER_PROBEABLE_RADIUS
+  #define FRONT_PROBE_BED_POSITION -(HANGPRINTER_PROBEABLE_RADIUS)
+  #define BACK_PROBE_BED_POSITION HANGPRINTER_PROBEABLE_RADIUS
 
   // The Z probe minimum outer margin (to validate G29 parameters).
   #define MIN_PROBE_EDGE 10
@@ -1044,12 +1042,12 @@
 
   #define _PX(R,A) (R) * cos(RADIANS(A))
   #define _PY(R,A) (R) * sin(RADIANS(A))
-  #define UBL_PROBE_PT_1_X _PX(DELTA_PROBEABLE_RADIUS, 0)   // Probing points for 3-Point leveling of the mesh
-  #define UBL_PROBE_PT_1_Y _PY(DELTA_PROBEABLE_RADIUS, 0)
-  #define UBL_PROBE_PT_2_X _PX(DELTA_PROBEABLE_RADIUS, 120)
-  #define UBL_PROBE_PT_2_Y _PY(DELTA_PROBEABLE_RADIUS, 120)
-  #define UBL_PROBE_PT_3_X _PX(DELTA_PROBEABLE_RADIUS, 240)
-  #define UBL_PROBE_PT_3_Y _PY(DELTA_PROBEABLE_RADIUS, 240)
+  #define UBL_PROBE_PT_1_X _PX(HANGPRINTER_PROBEABLE_RADIUS, 0)   // Probing points for 3-Point leveling of the mesh
+  #define UBL_PROBE_PT_1_Y _PY(HANGPRINTER_PROBEABLE_RADIUS, 0)
+  #define UBL_PROBE_PT_2_X _PX(HANGPRINTER_PROBEABLE_RADIUS, 120)
+  #define UBL_PROBE_PT_2_Y _PY(HANGPRINTER_PROBEABLE_RADIUS, 120)
+  #define UBL_PROBE_PT_3_X _PX(HANGPRINTER_PROBEABLE_RADIUS, 240)
+  #define UBL_PROBE_PT_3_Y _PY(HANGPRINTER_PROBEABLE_RADIUS, 240)
 
   #define UBL_MESH_EDIT_MOVES_Z     // Sophisticated users prefer no movement of nozzle
   #define UBL_SAVE_ACTIVE_ON_M500   // Save the currently active mesh in the current slot on M500
@@ -1095,10 +1093,10 @@
 #define BED_CENTER_AT_0_0
 
 // Manually set the home position. Leave these undefined for automatic settings.
-// For DELTA this is the top-center of the Cartesian print volume.
+// For HANGPRINTER this is the bottom-center of the Cartesian print volume.
 //#define MANUAL_X_HOME_POS 0
 //#define MANUAL_Y_HOME_POS 0
-//#define MANUAL_Z_HOME_POS DELTA_HEIGHT // Distance between the nozzle to printbed after homing
+//#define MANUAL_Z_HOME_POS 0 // Distance between the nozzle to printbed after homing
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
@@ -1116,8 +1114,8 @@
   #define Z_SAFE_HOMING_Y_POINT ((Y_BED_SIZE) / 2)    // Y point for Z homing when homing all axes (G28).
 #endif
 
-// Delta only homes to Z
-#define HOMING_FEEDRATE_Z  (200*60)
+// Hangprinter doesn't have automatic homing
+#define DUMMY_HOMING_FEEDRATE  (200*60)
 
 // @section calibrate
 
