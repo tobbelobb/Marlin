@@ -85,8 +85,20 @@ volatile uint8_t Planner::block_buffer_head = 0,           // Index of the next 
                  Planner::block_buffer_tail = 0;
 
 float Planner::max_feedrate_mm_s[XYZE_N], // Max speeds in mm per second
-      Planner::axis_steps_per_mm[XYZE_N],
-      Planner::steps_to_mm[XYZE_N];
+      Planner::axis_steps_per_mm[
+                                 #if ENABLED(HANGPRINTER)
+                                   ABCDE_N
+                                 #else
+                                   XYZE_N
+                                 #endif
+                                 ],
+      Planner::steps_to_mm[
+                           #if ENABLED(HANGPRINTER)
+                             ABCDE_N
+                           #else
+                             XYZE_N
+                           #endif
+                          ];
 
 #if ENABLED(DISTINCT_E_FACTORS)
   uint8_t Planner::last_extruder = 0;     // Respond to extruder change
@@ -102,8 +114,20 @@ float Planner::e_factor[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(1.0); // The flow perce
         Planner::volumetric_multiplier[EXTRUDERS];  // Reciprocal of cross-sectional area of filament (in mm^2). Pre-calculated to reduce computation in the planner
 #endif
 
-uint32_t Planner::max_acceleration_steps_per_s2[XYZE_N],
-         Planner::max_acceleration_mm_per_s2[XYZE_N]; // Use M201 to override by software
+uint32_t Planner::max_acceleration_steps_per_s2[
+                                                #if ENABLED(HANGPRINTER)
+                                                  ABCDE_N
+                                                #else
+                                                  XYZE_N
+                                                #endif
+                                               ],
+         Planner::max_acceleration_mm_per_s2[
+                                             #if ENABLED(HANGPRINTER)
+                                               ABCDE_N
+                                             #else
+                                               XYZE_N
+                                             #endif
+                                            ]; // Use M201 to override by software
 
 uint32_t Planner::min_segment_time_us;
 

@@ -62,6 +62,9 @@ A comment in planner.h near planner.buffer_line() says:
 "Kinematic machines should call buffer_line_kinematic (for leveled moves)."
 But the DELTA code calls buffer_line(), not buffer_line_kinematic() (ok, it calls buffer_line_kinematic if there is no XY movement).
 
+What is "fade"?
+
+Why are ABC axes called ARG_X ARG_Y ARG_Z / rx ry rz?
 
 OBSERVE: ---------------------------------------------
 Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS

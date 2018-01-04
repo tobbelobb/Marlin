@@ -805,6 +805,7 @@
 
 // Disables axis stepper immediately when it's not being used.
 // WARNING: When motors turn off there is a chance of losing position accuracy!
+// Never disable any motors on a Hangprinter
 #define DISABLE_X false
 #define DISABLE_Y false
 #define DISABLE_Z false
