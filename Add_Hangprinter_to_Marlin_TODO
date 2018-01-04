@@ -1,0 +1,22 @@
+
+
+Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS wherever there was X_AXIS, Y_AXIS, Z_AXIS, E_AXIS before
+Add ABCDE and ABCDE_N wherever there was XYZE and XYZE_N before
+Map ABC D E axes to XYZ E1 E0
+Include forward kinematics
+
+Make G6 and G1 S2 step individual motors
+
+Make G28 do nothing but zero out counters
+
+Make sure so that motors never disable when ENABLED(HANGPRINTER)
+
+Include line buildup compensation
+
+Include Mechaduino i2c code
+
+
+DONE:-------------------------------------------------
+Add HANGPRINTER define
+Set sane defaults for Configuration.h
+Add ANCHOR_ABC_XYZ and ANCHOR_D_Z
