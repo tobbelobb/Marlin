@@ -427,22 +427,6 @@
 // Enable HANGPRINTER kinematics and most of the default configuration for Hangprinters
 #define HANGPRINTER
 #if ENABLED(HANGPRINTER)
-  // Observe: Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
-  // This affects ABCDE arrays
-  //   - DEFAULT_AXIS_STEPS_PER_UNIT
-  //   - DEFAULT_MAX_FEEDRATE
-  //   - DEFAULT_MAX_ACCELERATION
-  //   - homing_feedrate_mm_s[]
-  // And ABCD arrays
-  //   - nr_of_lines_in_direction
-  //   - MOUNTED_LINE
-  //   - SPOOL_RADII
-  //   - STEPS_PER_SPOOL_RADIAN
-  //
-  //   Hangprinter mapping pins to axes:
-  //   {X, Y, Z, E1, E0} <-> {A, B, C, D, E}
-  //   Note that D axis uses the E1 pin
-
   #define KINEMATIC_SEGMENTS_PER_SECOND 40
   #define HANGPRINTER_PRINTABLE_RADIUS 1500.0
   // All anchor position coordinates must be floating point, so always have a decimal point in them.
@@ -458,6 +442,7 @@
   #define ANCHOR_D_Z 3250.5
 
   // If you want the experimental line buildup compensation feature with your Hangprinter, uncomment this.
+  // TODO: Not yet implemented as of Jan 4 2018
   //#define EXPERIMENTAL_LINE_BUILDUP_COMPENSATION_FEATURE
 
   /* ----- How many lines in each direction? --- */

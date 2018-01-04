@@ -12859,6 +12859,19 @@ void ok_to_send() {
 
 #endif // DELTA
 
+#if ENABLED(HANGPRINTER)
+  /**
+   * Hangprinter inverse kinematics
+   */
+  void inverse_kinematics(const float raw[XYZ]) {
+    HANGPRINTER_IK(raw);
+  }
+
+  /**
+   * TODO: void forward_kinematics_HANGPRINTER(float a, float b, float c, float d);
+   */
+#endif // HANGPRINTER
+
 /**
  * Get the stepper positions in the cartes[] array.
  * Forward kinematics are applied for DELTA and SCARA.
@@ -13238,8 +13251,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
         planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], raw[Z_AXIS], raw[E_AXIS], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
         oldA = delta[A_AXIS]; oldB = delta[B_AXIS];
       #elif ENABLED(HANGPRINTER)
-        //planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
-        planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
+        planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
       #else
         planner.buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
       #endif

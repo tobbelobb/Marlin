@@ -1,9 +1,18 @@
-
-
-Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS wherever there was X_AXIS, Y_AXIS, Z_AXIS, E_AXIS before
+TODO: ------------------------------------------------
+Prepare planner.cpp
+Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS as indices for all Hangprinter geometry arrays (still X_AXIS, Y_AXIS, Z_AXIS, E_AXIS for Carthesian geometry arrays)
+ - make changes to prepare_kinematic_move_to(destination)
 Add ABCDE and ABCDE_N wherever there was XYZE and XYZE_N before
 Map ABC D E axes to XYZ E1 E0
+Change gcodes that look for axis_codes (= { 'X', 'Y', 'Z', 'E' }) so that they look for axis_codes_hangprinter (= { 'A', 'B', 'C', 'D', 'E' }) instead
+  - M201
+  - M204
+  - M92
+
 Include forward kinematics
+  Use trilateration: https://en.wikipedia.org/wiki/Trilateration (Try all 4 combinations and average the result)
+
+Make changes to: void inverse_kinematics(const float raw[XYZ]);
 
 Make G6 and G1 S2 step individual motors
 
@@ -20,3 +29,67 @@ DONE:-------------------------------------------------
 Add HANGPRINTER define
 Set sane defaults for Configuration.h
 Add ANCHOR_ABC_XYZ and ANCHOR_D_Z
+Include inverse kinematics
+Prepare planner.h
+
+
+GENERAL STRATEGY:-------------------------------------
+1: As small changes as possible
+Changes analogous to DELTA
+But don't use DELTA define or DELTA names. Use HANGPRINTER/KINEMATIC instead.
+
+2: Use IS_KINEMATIC
+
+3: Collect in arrays all that can be collected in arrays
+
+4: Don't make new functions
+
+
+QUESTIONS: -------------------------------------------
+What is UBL, UBL_SEGMENTED etc ?
+  ans: Unified Bed Leveling
+  What does it do?
+    Marlin uses ubl.prepare_segmented_line_to instead of prepare_kinematic_move_to if UBL_SEGMENTED is enabled...
+
+Why does Marlin have #if ENABLED(DELTA_FAST_SQRT) in two places when there is no #define DELTA_FAST_SQRT?
+  Don't use DELTA_FAST_SQRT/Q_rsqrt. It's the "Quake reciprocal sqrt"-trick.
+
+Where is delta_segments_per_second initalized?
+  Configuration_store.cpp?
+  We should initialize anchor_ABCD_XYZ and other variables there as well
+
+A comment in planner.h near planner.buffer_line() says:
+"Kinematic machines should call buffer_line_kinematic (for leveled moves)."
+But the DELTA code calls buffer_line(), not buffer_line_kinematic() (ok, it calls buffer_line_kinematic if there is no XY movement).
+
+
+OBSERVE: ---------------------------------------------
+Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
+This affects ABCDE arrays
+  - DEFAULT_AXIS_STEPS_PER_UNIT
+  - DEFAULT_MAX_FEEDRATE
+  - DEFAULT_MAX_ACCELERATION
+  - homing_feedrate_mm_s[]
+  - axis_steps_per_mm (planner.cpp)
+  - steps_to_mm (planner.cpp)
+  - max_acceleration_steps_per_s2 (planner.cpp)
+  - max_acceleration_mm_per_s2 (planner.cpp)
+And ABCDE functions/methods
+  - _buffer_steps (planner.cpp)
+  - buffer_segment (planner.cpp)
+  - _set_position_mm (planner.cpp)
+  - buffer_line (planner.cpp)
+
+And ABCD arrays
+  - nr_of_lines_in_direction
+  - MOUNTED_LINE
+  - SPOOL_RADII
+  - STEPS_PER_SPOOL_RADIAN
+
+  Hangprinter mapping pins to axes:
+  {X, Y, Z, E1, E0} <-> {A, B, C, D, E}
+  Note that D axis uses the E1 pin
+
+
+TODO LATER: ------------------------------------------
+delta_segments_per_second -> kinematic_segments_per_second
