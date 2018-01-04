@@ -1472,6 +1472,18 @@ void MarlinSettings::reset() {
       );
     #endif
 
+  #elif ENABLED(HANGPRINTER)
+    delta_segments_per_second = KINEMATIC_SEGMENTS_PER_SECOND;
+    anchor_A_y = ANCHOR_A_Y;
+    anchor_A_z = ANCHOR_A_Z;
+    anchor_B_x = ANCHOR_B_X;
+    anchor_B_y = ANCHOR_B_Y;
+    anchor_B_z = ANCHOR_B_Z;
+    anchor_C_x = ANCHOR_C_X;
+    anchor_C_y = ANCHOR_C_Y;
+    anchor_C_z = ANCHOR_C_Z;
+    anchor_D_z = ANCHOR_D_Z;
+    HANGPRINTER_IK_ORIGIN(); // Modifies line_lengths[ABCD]
   #endif
 
   #if ENABLED(ULTIPANEL)

@@ -294,7 +294,11 @@ extern float soft_endstop_min[XYZ], soft_endstop_max[XYZ];
 void report_current_position();
 
 #if IS_KINEMATIC
-  extern float delta[ABC];
+  #if ENABLED(HANGPRINTER)
+    extern float line_lengths[ABCD];
+  #else
+    extern float delta[ABC];
+  #endif
   void inverse_kinematics(const float raw[XYZ]);
 #endif
 
@@ -332,6 +336,46 @@ void report_current_position();
     delta[A_AXIS] = DELTA_Z(V, A_AXIS); \
     delta[B_AXIS] = DELTA_Z(V, B_AXIS); \
     delta[C_AXIS] = DELTA_Z(V, C_AXIS); \
+  }while(0)
+
+#elif ENABLED(HANGPRINTER)
+ // Don't collect anchor positions in array because there are no A_x, D_x or D_y
+  extern float anchor_A_y,
+               anchor_A_z,
+               anchor_B_x,
+               anchor_B_y,
+               anchor_B_z,
+               anchor_C_x,
+               anchor_C_y,
+               anchor_C_z,
+               anchor_D_z,
+               delta_segments_per_second;
+  #define HANGPRINTER_IK(V) do {                             \
+    line_lengths[A_AXIS] = sqrt(sq(anchor_A_z - V[Z_AXIS])   \
+                              + sq(anchor_A_y - V[Y_AXIS])   \
+                              + sq(             V[X_AXIS])); \
+    line_lengths[B_AXIS] = sqrt(sq(anchor_B_z - V[Z_AXIS])   \
+                              + sq(anchor_B_y - V[Y_AXIS])   \
+                              + sq(anchor_B_x - V[X_AXIS])); \
+    line_lengths[C_AXIS] = sqrt(sq(anchor_C_z - V[Z_AXIS])   \
+                              + sq(anchor_C_y - V[Y_AXIS])   \
+                              + sq(anchor_C_x - V[X_AXIS])); \
+    line_lengths[D_AXIS] = sqrt(sq(             V[X_AXIS])   \
+                              + sq(             V[Y_AXIS])   \
+                              + sq(anchor_D_z - V[Z_AXIS])); \
+  }while(0)
+
+  // Inverse kinematics at origin
+  #define HANGPRINTER_IK_ORIGIN do {             \
+    line_lengths[A_AXIS] = sqrt(sq(anchor_A_z)   \
+                              + sq(anchor_A_y)); \
+    line_lengths[B_AXIS] = sqrt(sq(anchor_B_z)   \
+                              + sq(anchor_B_y)   \
+                              + sq(anchor_B_x)); \
+    line_lengths[C_AXIS] = sqrt(sq(anchor_C_z)   \
+                              + sq(anchor_C_y)   \
+                              + sq(anchor_C_x)); \
+    line_lengths[D_AXIS] = anchor_D_z;           \
   }while(0)
 
 #elif IS_SCARA

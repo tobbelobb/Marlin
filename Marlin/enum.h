@@ -49,21 +49,24 @@
     Z_HEAD    = 6,
     ALL_AXES  = 100
   };
-#else // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS
+#else // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
   enum AxisEnum {
     NO_AXIS   = -1,
     X_AXIS    = 0,
-    A_AXIS    = 0,
     Y_AXIS    = 1,
-    B_AXIS    = 1,
     Z_AXIS    = 2,
+    E_AXIS    = 3,
+    X_HEAD    = 4,
+    Y_HEAD    = 5,
+    Z_HEAD    = 6,
+    ALL_AXES  = 100
+  };
+  enum HangprinterAxisEnum {
+    A_AXIS    = 0,
+    B_AXIS    = 1,
     C_AXIS    = 2,
     D_AXIS    = 3,
-    E_AXIS    = 4,
-    X_HEAD    = 5,
-    Y_HEAD    = 6,
-    Z_HEAD    = 7,
-    ALL_AXES  = 100
+    EHP_AXIS  = 4
   };
 #endif
 

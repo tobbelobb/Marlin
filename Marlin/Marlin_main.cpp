@@ -494,6 +494,9 @@ volatile bool wait_for_heatup = true;
 #endif
 
 const char axis_codes[XYZE] = { 'X', 'Y', 'Z', 'E' };
+#if ENABLED(HANGPRINTER)
+  const char axis_codes_hangprinter[ABCDE] = { 'A', 'B', 'C', 'D', 'E' };
+#endif
 
 // Number of characters read in the current line of serial input
 static int serial_count = 0;
@@ -621,6 +624,20 @@ uint8_t target_extruder;
 
   float delta_safe_distance_from_top();
 
+#endif
+
+#if ENABLED(HANGPRINTER)
+  float anchor_A_y,
+        anchor_A_z,
+        anchor_B_x,
+        anchor_B_y,
+        anchor_B_z,
+        anchor_C_x,
+        anchor_C_y,
+        anchor_C_z,
+        anchor_D_z,
+        line_lengths[ABCD],
+        delta_segments_per_second;
 #endif
 
 #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
@@ -13105,10 +13122,10 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
 #if IS_KINEMATIC
 
   /**
-   * Prepare a linear move in a DELTA or SCARA setup.
+   * Prepare a linear move in a DELTA, SCARA or HANGPRINTER setup.
    *
    * This calls planner.buffer_line several times, adding
-   * small incremental moves for DELTA or SCARA.
+   * small incremental moves for DELTA, SCARA or HANGPRINTER.
    *
    * For Unified Bed Leveling (Delta or Segmented Cartesian)
    * the ubl.prepare_segmented_line_to method replaces this.
@@ -13119,10 +13136,18 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     const float _feedrate_mm_s = MMS_SCALED(feedrate_mm_s);
 
     const float xdiff = rtarget[X_AXIS] - current_position[X_AXIS],
-                ydiff = rtarget[Y_AXIS] - current_position[Y_AXIS];
+                ydiff = rtarget[Y_AXIS] - current_position[Y_AXIS]
+                #if ENABLED(HANGPRINTER)
+                  , zdiff = rtarget[Z_AXIS] - current_position[Z_AXIS]
+                #endif
+                ;
 
-    // If the move is only in Z/E don't split up the move
-    if (!xdiff && !ydiff) {
+    // If the move is only in Z/E (for Hangprinter only in E) don't split up the move
+    if (!xdiff && !ydiff
+      #if ENABLED(HANGPRINTER)
+        && !zdiff
+      #endif
+        ) {
       planner.buffer_line_kinematic(rtarget, _feedrate_mm_s, active_extruder);
       return false; // caller will update current_position
     }
@@ -13131,7 +13156,10 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     if (!position_is_reachable(rtarget[X_AXIS], rtarget[Y_AXIS])) return true;
 
     // Remaining cartesian distances
-    const float zdiff = rtarget[Z_AXIS] - current_position[Z_AXIS],
+    const float
+                #if !ENABLED(HANGPRINTER)
+                  zdiff = rtarget[Z_AXIS] - current_position[Z_AXIS],
+                #endif
                 ediff = rtarget[E_AXIS] - current_position[E_AXIS];
 
     // Get the linear distance in XYZ
@@ -13196,6 +13224,8 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
       LOOP_XYZE(i) raw[i] += segment_distance[i];
       #if ENABLED(DELTA)
         DELTA_IK(raw); // Delta can inline its kinematics
+      #elif ENABLED(HANGPRINTER)
+        HANGPRINTER_IK(raw); // Modifies line_lengths[ABCD]
       #else
         inverse_kinematics(raw);
       #endif
@@ -13207,6 +13237,9 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
         // i.e., Complete the angular vector in the given time.
         planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], raw[Z_AXIS], raw[E_AXIS], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
         oldA = delta[A_AXIS]; oldB = delta[B_AXIS];
+      #elif ENABLED(HANGPRINTER)
+        //planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
+        planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
       #else
         planner.buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
       #endif
@@ -13351,7 +13384,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
  * Prepare a single move and get ready for the next one
  *
  * This may result in several calls to planner.buffer_line to
- * do smaller moves for DELTA, SCARA, mesh moves, etc.
+ * do smaller moves for DELTA, SCARA, HANGPRINTER, mesh moves, etc.
  *
  * Make sure current_position[E] and destination[E] are good
  * before calling or cold/lengthy extrusion may get missed.
