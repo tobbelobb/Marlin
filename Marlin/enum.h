@@ -30,23 +30,42 @@
  *
  * Special axis:
  *  - A_AXIS and B_AXIS are used by COREXY printers
+ *  - A_AXIS, B_AXIS, C_AXIS, D_AXIS are used by Hangprinter
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-enum AxisEnum {
-  NO_AXIS   = -1,
-  X_AXIS    = 0,
-  A_AXIS    = 0,
-  Y_AXIS    = 1,
-  B_AXIS    = 1,
-  Z_AXIS    = 2,
-  C_AXIS    = 2,
-  E_AXIS    = 3,
-  X_HEAD    = 4,
-  Y_HEAD    = 5,
-  Z_HEAD    = 6,
-  ALL_AXES  = 100
-};
+#if !ENABLED(HANGPRINTER)
+  enum AxisEnum {
+    NO_AXIS   = -1,
+    X_AXIS    = 0,
+    A_AXIS    = 0,
+    Y_AXIS    = 1,
+    B_AXIS    = 1,
+    Z_AXIS    = 2,
+    C_AXIS    = 2,
+    E_AXIS    = 3,
+    X_HEAD    = 4,
+    Y_HEAD    = 5,
+    Z_HEAD    = 6,
+    ALL_AXES  = 100
+  };
+#else // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS
+  enum AxisEnum {
+    NO_AXIS   = -1,
+    X_AXIS    = 0,
+    A_AXIS    = 0,
+    Y_AXIS    = 1,
+    B_AXIS    = 1,
+    Z_AXIS    = 2,
+    C_AXIS    = 2,
+    D_AXIS    = 3,
+    E_AXIS    = 4,
+    X_HEAD    = 5,
+    Y_HEAD    = 6,
+    Z_HEAD    = 7,
+    ALL_AXES  = 100
+  };
+#endif
 
 #define LOOP_S_LE_N(VAR, S, N) for (uint8_t VAR=S; VAR<=N; VAR++)
 #define LOOP_S_L_N(VAR, S, N) for (uint8_t VAR=S; VAR<N; VAR++)
