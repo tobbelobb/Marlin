@@ -405,15 +405,17 @@
    */
   #if ENABLED(DISTINCT_E_FACTORS) && E_STEPPERS > 1
     #define XYZE_N (XYZ + E_STEPPERS)
-    #define E_AXIS_N (E_AXIS + extruder)
     #if ENABLED(HANGPRINTER)
       #define ABCDE_N (ABCD + E_STEPPERS)
+      #define EHP_AXIS_N (EHP_AXIS + extruder)
     #endif
+    #define E_AXIS_N (E_AXIS + extruder)
   #else
     #undef DISTINCT_E_FACTORS
     #define XYZE_N XYZE
     #if ENABLED(HANGPRINTER)
       #define ABCDE_N ABCDE
+      #define EHP_AXIS_N EHP_AXIS
     #endif
     #define E_AXIS_N E_AXIS
   #endif
