@@ -34,7 +34,24 @@
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-#if DISABLED(HANGPRINTER)
+#if ENABLED(HANGPRINTER) // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS_HANGPRINTER
+  enum AxisEnum {
+    NO_AXIS   = -1,
+    X_AXIS    = 0,
+    A_AXIS    = 0,
+    Y_AXIS    = 1,
+    B_AXIS    = 1,
+    Z_AXIS    = 2,
+    C_AXIS    = 2,
+    E_AXIS    = 3,
+    D_AXIS    = 3,
+    E_AXIS_HANGPRINTER = 4,
+    X_HEAD    = 5,
+    Y_HEAD    = 6,
+    Z_HEAD    = 7,
+    ALL_AXES  = 100
+  };
+#else
   enum AxisEnum {
     NO_AXIS   = -1,
     X_AXIS    = 0,
@@ -49,25 +66,6 @@
     Z_HEAD    = 6,
     ALL_AXES  = 100
   };
-#else // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
-  enum AxisEnum {
-    NO_AXIS   = -1,
-    X_AXIS    = 0,
-    Y_AXIS    = 1,
-    Z_AXIS    = 2,
-    E_AXIS    = 3,
-    X_HEAD    = 5,
-    Y_HEAD    = 6,
-    Z_HEAD    = 7,
-    ALL_AXES  = 100
-  };
-  enum HangprinterAxisEnum {
-    A_AXIS    = 0,
-    B_AXIS    = 1,
-    C_AXIS    = 2,
-    D_AXIS    = 3,
-    EHP_AXIS  = 4
-  };
 #endif
 
 #define LOOP_S_LE_N(VAR, S, N) for (uint8_t VAR=S; VAR<=N; VAR++)
@@ -81,7 +79,7 @@
 #define LOOP_XYZE_N(VAR) LOOP_S_L_N(VAR, X_AXIS, XYZE_N)
 #if ENABLED(HANGPRINTER)
   #define LOOP_ABCD(VAR) LOOP_S_LE_N(VAR, A_AXIS, D_AXIS)
-  #define LOOP_ABCDE(VAR) LOOP_S_LE_N(VAR, A_AXIS, EHP_AXIS)
+  #define LOOP_ABCDE(VAR) LOOP_S_LE_N(VAR, A_AXIS, E_AXIS_HANGPRINTER)
   #define LOOP_ABCDE_N(VAR) LOOP_S_L_N(VAR, A_AXIS, ABCDE_N)
 #endif
 

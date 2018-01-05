@@ -129,6 +129,15 @@ typedef struct {
 
 #define BLOCK_MOD(n) ((n)&(BLOCK_BUFFER_SIZE-1))
 
+// E_AXIS_ makes space for extra movement axis
+#if ENABLED(HANGPRINTER)
+  #define E_AXIS_ EHP_AXIS
+  #define E_AXIS_N_ E_AXIS_HANGPRINTER_N
+#else
+  #define E_AXIS_ E_AXIS
+  #define E_AXIS_N_ E_AXIS_N
+#endif
+
 class Planner {
   public:
 
@@ -199,7 +208,11 @@ class Planner {
                  acceleration,         // Normal acceleration mm/s^2  DEFAULT ACCELERATION for all printing moves. M204 SXXXX
                  retract_acceleration, // Retract acceleration mm/s^2 filament pull-back and push-forward while standing still in the other axes M204 TXXXX
                  travel_acceleration,  // Travel acceleration mm/s^2  DEFAULT ACCELERATION for all NON printing moves. M204 MXXXX
-                 max_jerk[XYZE],       // The largest speed change requiring no acceleration
+                 #if ENABLED(HANGPRINTER)
+                   max_jerk[ABCDE],       // The largest speed change requiring no acceleration
+                 #else
+                   max_jerk[XYZE],       // The largest speed change requiring no acceleration
+                 #endif
                  min_travel_feedrate_mm_s;
 
     #if HAS_LEVELING
@@ -558,7 +571,7 @@ class Planner {
     static void set_position_mm_kinematic(const float (&cart)[XYZE]);
     static void set_position_mm(const AxisEnum axis, const float &v);
     FORCE_INLINE static void set_z_position_mm(const float &z) { set_position_mm(Z_AXIS, z); }
-    FORCE_INLINE static void set_e_position_mm(const float &e) { set_position_mm(AxisEnum(E_AXIS), e); }
+    FORCE_INLINE static void set_e_position_mm(const float &e) { set_position_mm(AxisEnum(E_AXIS_), e); }
 
     /**
      * Sync from the stepper positions. (e.g., after an interrupted move)

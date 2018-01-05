@@ -407,7 +407,7 @@
     #define XYZE_N (XYZ + E_STEPPERS)
     #if ENABLED(HANGPRINTER)
       #define ABCDE_N (ABCD + E_STEPPERS)
-      #define EHP_AXIS_N (EHP_AXIS + extruder)
+      #define E_AXIS_HANGPRINTER_N (E_AXIS_HANGPRINTER + extruder)
     #endif
     #define E_AXIS_N (E_AXIS + extruder)
   #else
@@ -415,7 +415,7 @@
     #define XYZE_N XYZE
     #if ENABLED(HANGPRINTER)
       #define ABCDE_N ABCDE
-      #define EHP_AXIS_N EHP_AXIS
+      #define E_AXIS_HANGPRINTER_N E_AXIS_HANGPRINTER
     #endif
     #define E_AXIS_N E_AXIS
   #endif

@@ -1402,13 +1402,12 @@ void MarlinSettings::reset() {
     planner.max_jerk[B_AXIS] = DEFAULT_BJERK;
     planner.max_jerk[C_AXIS] = DEFAULT_CJERK;
     planner.max_jerk[D_AXIS] = DEFAULT_DJERK;
-    planner.max_jerk[EHP_AXIS] = DEFAULT_EJERK;
   #else
     planner.max_jerk[X_AXIS] = DEFAULT_XJERK;
     planner.max_jerk[Y_AXIS] = DEFAULT_YJERK;
     planner.max_jerk[Z_AXIS] = DEFAULT_ZJERK;
-    planner.max_jerk[E_AXIS] = DEFAULT_EJERK;
   #endif
+  planner.max_jerk[E_AXIS_] = DEFAULT_EJERK;
 
   #if HAS_HOME_OFFSET
     ZERO(home_offset);
@@ -1757,22 +1756,14 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.axis_steps_per_mm[Z_AXIS]));
     #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      #if ENABLED(HANGPRINTER)
-        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[EHP_AXIS]));
-      #else
-        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS]));
-      #endif
+      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS_]));
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M92 T", (int)i);
-        #if ENABLED(HANGPRINTER)
-          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[EHP_AXIS + i]));
-        #else
-          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS + i]));
-        #endif
+        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS_ + i]));
       }
     #endif
 
@@ -1792,22 +1783,14 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_feedrate_mm_s[Z_AXIS]));
     #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      #if ENABLED(HANGPRINTER)
-        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[EHP_AXIS]));
-      #else
-        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS]));
-      #endif
+      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS_]));
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M203 T", (int)i);
-        #if ENABLED(HANGPRINTER)
-          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[EHP_AXIS + i]));
-        #else
-          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS + i]));
-        #endif
+        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS_ + i]));
       }
     #endif
 
@@ -1827,22 +1810,14 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[Z_AXIS]));
     #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      #if ENABLED(HANGPRINTER)
-        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[EHP_AXIS]));
-      #else
-        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS]));
-      #endif
+      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS_]));
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M201 T", (int)i);
-        #if ENABLED(HANGPRINTER)
-          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[EHP_AXIS + i]));
-        #else
-          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS + i]));
-        #endif
+        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS_ + i]));
       }
     #endif
 
@@ -1872,13 +1847,12 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" B", LINEAR_UNIT(planner.max_jerk[B_AXIS]));
       SERIAL_ECHOPAIR(" C", LINEAR_UNIT(planner.max_jerk[C_AXIS]));
       SERIAL_ECHOPAIR(" D", LINEAR_UNIT(planner.max_jerk[D_AXIS]));
-      SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[EHP_AXIS]));
     #else
       SERIAL_ECHOPAIR(" X", LINEAR_UNIT(planner.max_jerk[X_AXIS]));
       SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_jerk[Y_AXIS]));
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_jerk[Z_AXIS]));
-      SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[E_AXIS]));
     #endif
+    SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[E_AXIS_]));
 
     #if HAS_M206_COMMAND
       if (!forReplay) {
