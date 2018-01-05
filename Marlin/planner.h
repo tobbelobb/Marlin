@@ -131,7 +131,7 @@ typedef struct {
 
 // E_AXIS_ makes space for extra movement axis
 #if ENABLED(HANGPRINTER)
-  #define E_AXIS_ EHP_AXIS
+  #define E_AXIS_ E_AXIS_HANGPRINTER
   #define E_AXIS_N_ E_AXIS_HANGPRINTER_N
 #else
   #define E_AXIS_ E_AXIS

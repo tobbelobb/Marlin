@@ -200,11 +200,13 @@ float Planner::previous_speed[NUM_AXIS],
 #if ENABLED(LIN_ADVANCE)
   float Planner::extruder_advance_k, // Initialized by settings.load()
         Planner::advance_ed_ratio,   // Initialized by settings.load()
-        #if ENABLED(HANGPRINTER) // TODO: A little unsure if position_float means carthesian or movement axis position
-          Planner::position_float[ABCDE], // Needed for accurate maths. Steps cannot be used!
-        #else
-          Planner::position_float[XYZE], // Needed for accurate maths. Steps cannot be used!
-        #endif
+          Planner::position_float[
+                                  #if ENABLED(HANGPRINTER) // TODO: A little unsure if position_float means carthesian or movement axis position
+                                    ABCDE // Needed for accurate maths. Steps cannot be used!
+                                  #else
+                                    XYZE
+                                  #endif
+                                 ], // Needed for accurate maths. Steps cannot be used!
         Planner::lin_dist_xy,
         Planner::lin_dist_e;
 #endif
