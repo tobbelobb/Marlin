@@ -444,41 +444,42 @@
   // If you want the experimental line buildup compensation feature with your Hangprinter, uncomment this.
   // TODO: Not yet implemented as of Jan 4 2018
   //#define EXPERIMENTAL_LINE_BUILDUP_COMPENSATION_FEATURE
+  #if ENABLED(EXPERIMENTAL_LINE_BUILDUP_COMPENSATION_FEATURE)
+    /* ----- How many lines in each direction? --- */
+    #define MECHANICAL_ADVANTAGE_A 1
+    #define MECHANICAL_ADVANTAGE_B 1
+    #define MECHANICAL_ADVANTAGE_C 1
+    #define MECHANICAL_ADVANTAGE_D 1
 
-  /* ----- How many lines in each direction? --- */
-  #define MECHANICAL_ADVANTAGE_A 1
-  #define MECHANICAL_ADVANTAGE_B 1
-  #define MECHANICAL_ADVANTAGE_C 1
-  #define MECHANICAL_ADVANTAGE_D 1
+    #define ACTION_POINTS_A 2
+    #define ACTION_POINTS_B 2
+    #define ACTION_POINTS_C 2
+    #define ACTION_POINTS_D 3
 
-  #define ACTION_POINTS_A 2
-  #define ACTION_POINTS_B 2
-  #define ACTION_POINTS_C 2
-  #define ACTION_POINTS_D 3
+    /* ----- This many: -----*/
+    const int nr_of_lines_in_direction[ABCD] = {MECHANICAL_ADVANTAGE_A*ACTION_POINTS_A,
+                                                MECHANICAL_ADVANTAGE_B*ACTION_POINTS_B,
+                                                MECHANICAL_ADVANTAGE_C*ACTION_POINTS_C,
+                                                MECHANICAL_ADVANTAGE_D*ACTION_POINTS_D};
 
-  /* ----- This many: -----*/
-  const int nr_of_lines_in_direction[ABCD] = {MECHANICAL_ADVANTAGE_A*ACTION_POINTS_A,
-                                              MECHANICAL_ADVANTAGE_B*ACTION_POINTS_B,
-                                              MECHANICAL_ADVANTAGE_C*ACTION_POINTS_C,
-                                              MECHANICAL_ADVANTAGE_D*ACTION_POINTS_D};
+    // line diameter 0.5, spool height 8.0:
+    // 0.5*0.5/(pi*8.0) = 0.009947
+    #define DEFAULT_SPOOL_BUILDUP_FACTOR 0.007
 
-  // line diameter 0.5, spool height 8.0:
-  // 0.5*0.5/(pi*8.0) = 0.009947
-  #define DEFAULT_SPOOL_BUILDUP_FACTOR 0.007
+    // Total length of lines on each spool
+    // Default assumes all nine lines are cut to length 7500 mm.
+    // Change to whatever length you have cut your different lines to.
+    const float MOUNTED_LINE[ABCD] = { 7500.0, 7500.0, 7500.0, 7500.0 };
 
-  // Total length of lines on each spool
-  // Default assumes all nine lines are cut to length 7500 mm.
-  // Change to whatever length you have cut your different lines to.
-  const float MOUNTED_LINE[ABCD] = { 7500.0, 7500.0, 7500.0, 7500.0 };
+    // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
+    const float SPOOL_RADII[ABCD] = { 50.0, 50.0, 50.0, 50.0 };
 
-  // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
-  const float SPOOL_RADII[ABCD] = { 50.0, 50.0, 50.0, 50.0 };
-
-  // Motor gear teeth: 10
-  // Sandwich gear teeth: 100
-  // Steps per motor revolution: 3200 (that is, 1/16 microstepping a motor with 200 full steps per revolution)
-  // ==> Steps per spool radian = 3200/(2*pi*10/100) = 5093.0
-  const float STEPS_PER_SPOOL_RADIAN[ABCD] = { 5093.0, 5093.0, 5093.0, 5093.0 };
+    // Motor gear teeth: 10
+    // Sandwich gear teeth: 100
+    // Steps per motor revolution: 3200 (that is, 1/16 microstepping a motor with 200 full steps per revolution)
+    // ==> Steps per spool radian = 3200/(2*pi*10/100) = 5093.0
+    const float STEPS_PER_SPOOL_RADIAN[ABCD] = { 5093.0, 5093.0, 5093.0, 5093.0 };
+  #endif // EXPERIMENTAL_LINE_BUILDUP_COMPENSATION_FEATURE
 
   // If you want the experimental auto calibration feature with your Hangprinter, uncomment this.
   #define EXPERIMENTAL_AUTO_CALIBRATION_FEATURE
@@ -590,9 +591,10 @@
  * When changing speed and direction, if the difference is less than the
  * value set here, it may happen instantaneously.
  */
-#define DEFAULT_XJERK                 13.0
-#define DEFAULT_YJERK                 13.0
-#define DEFAULT_ZJERK                 13.0
+#define DEFAULT_AJERK                 13.0
+#define DEFAULT_BJERK                 13.0
+#define DEFAULT_CJERK                 13.0
+#define DEFAULT_DJERK                 13.0
 #define DEFAULT_EJERK                  5.0
 
 //===========================================================================
@@ -1190,7 +1192,7 @@
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
 //
-//#define EEPROM_SETTINGS // Enable for M500 and M501 commands
+//#define EEPROM_SETTINGS // Enable for M500 and M501 commands. Not yet implemented for Hangprinter
 //#define DISABLE_M503    // Saves ~2700 bytes of PROGMEM. Disable for release!
 #define EEPROM_CHITCHAT   // Give feedback on EEPROM commands. Disable to save PROGMEM.
 

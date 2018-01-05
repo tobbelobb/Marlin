@@ -60,7 +60,7 @@
  *  179  M205 X    planner.max_jerk[X_AXIS]         (float)
  *  183  M205 Y    planner.max_jerk[Y_AXIS]         (float)
  *  187  M205 Z    planner.max_jerk[Z_AXIS]         (float)
- *  191  M205 E    planner.max_jerk[E_AXIS]         (float)
+ *  191  M205 E    planner.max_jerk[E_AXIS]         (float) // TODO: HANGPRINTER axes abcde
  *  195  M206 XYZ  home_offset                      (float x3)
  *  207  M218 XYZ  hotend_offset                    (float x3 per additional hotend) +16
  *
@@ -340,10 +340,14 @@ void MarlinSettings::postprocess() {
 
     working_crc = 0; // clear before first "real data"
 
-    const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - XYZ;
+    #if ENABLED(HANGPRINTER)
+      const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - ABCD;
+    #else
+      const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - XYZ;
+    #endif
     EEPROM_WRITE(esteppers);
 
-    EEPROM_WRITE(planner.axis_steps_per_mm);
+    EEPROM_WRITE(planner.axis_steps_per_mm); // TODO: Hangprinter has 4 elements in these. Will break Hangprinter EEPROM. (tobben Jan 5, 2018)
     EEPROM_WRITE(planner.max_feedrate_mm_s);
     EEPROM_WRITE(planner.max_acceleration_mm_per_s2);
 
@@ -1377,7 +1381,11 @@ void MarlinSettings::postprocess() {
 void MarlinSettings::reset() {
   static const float tmp1[] PROGMEM = DEFAULT_AXIS_STEPS_PER_UNIT, tmp2[] PROGMEM = DEFAULT_MAX_FEEDRATE;
   static const uint32_t tmp3[] PROGMEM = DEFAULT_MAX_ACCELERATION;
-  LOOP_XYZE_N(i) {
+  #if ENABLED(HANGPRINTER)
+    LOOP_ABCDE_N(i) {
+  #else
+    LOOP_XYZE_N(i) {
+  #endif
     planner.axis_steps_per_mm[i]          = pgm_read_float(&tmp1[i < COUNT(tmp1) ? i : COUNT(tmp1) - 1]);
     planner.max_feedrate_mm_s[i]          = pgm_read_float(&tmp2[i < COUNT(tmp2) ? i : COUNT(tmp2) - 1]);
     planner.max_acceleration_mm_per_s2[i] = pgm_read_dword_near(&tmp3[i < COUNT(tmp3) ? i : COUNT(tmp3) - 1]);
@@ -1389,10 +1397,18 @@ void MarlinSettings::reset() {
   planner.min_feedrate_mm_s = DEFAULT_MINIMUMFEEDRATE;
   planner.min_travel_feedrate_mm_s = DEFAULT_MINTRAVELFEEDRATE;
   planner.min_segment_time_us = DEFAULT_MINSEGMENTTIME;
-  planner.max_jerk[X_AXIS] = DEFAULT_XJERK;
-  planner.max_jerk[Y_AXIS] = DEFAULT_YJERK;
-  planner.max_jerk[Z_AXIS] = DEFAULT_ZJERK;
-  planner.max_jerk[E_AXIS] = DEFAULT_EJERK;
+  #if ENABLED(HANGPRINTER)
+    planner.max_jerk[A_AXIS] = DEFAULT_AJERK;
+    planner.max_jerk[B_AXIS] = DEFAULT_BJERK;
+    planner.max_jerk[C_AXIS] = DEFAULT_CJERK;
+    planner.max_jerk[D_AXIS] = DEFAULT_DJERK;
+    planner.max_jerk[EHP_AXIS] = DEFAULT_EJERK;
+  #else
+    planner.max_jerk[X_AXIS] = DEFAULT_XJERK;
+    planner.max_jerk[Y_AXIS] = DEFAULT_YJERK;
+    planner.max_jerk[Z_AXIS] = DEFAULT_ZJERK;
+    planner.max_jerk[E_AXIS] = DEFAULT_EJERK;
+  #endif
 
   #if HAS_HOME_OFFSET
     ZERO(home_offset);
@@ -1730,18 +1746,33 @@ void MarlinSettings::reset() {
       SERIAL_ECHOLNPGM("Steps per unit:");
     }
     CONFIG_ECHO_START;
-    SERIAL_ECHOPAIR("  M92 X", LINEAR_UNIT(planner.axis_steps_per_mm[X_AXIS]));
-    SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.axis_steps_per_mm[Y_AXIS]));
-    SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.axis_steps_per_mm[Z_AXIS]));
+    #if ENABLED(HANGPRINTER)
+      SERIAL_ECHOPAIR("  M92 A", LINEAR_UNIT(planner.axis_steps_per_mm[A_AXIS]));
+      SERIAL_ECHOPAIR(" B", LINEAR_UNIT(planner.axis_steps_per_mm[B_AXIS]));
+      SERIAL_ECHOPAIR(" C", LINEAR_UNIT(planner.axis_steps_per_mm[C_AXIS]));
+      SERIAL_ECHOPAIR(" D", LINEAR_UNIT(planner.axis_steps_per_mm[D_AXIS]));
+    #else
+      SERIAL_ECHOPAIR("  M92 X", LINEAR_UNIT(planner.axis_steps_per_mm[X_AXIS]));
+      SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.axis_steps_per_mm[Y_AXIS]));
+      SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.axis_steps_per_mm[Z_AXIS]));
+    #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS]));
+      #if ENABLED(HANGPRINTER)
+        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[EHP_AXIS]));
+      #else
+        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS]));
+      #endif
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M92 T", (int)i);
-        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS + i]));
+        #if ENABLED(HANGPRINTER)
+          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[EHP_AXIS + i]));
+        #else
+          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS + i]));
+        #endif
       }
     #endif
 
@@ -1750,18 +1781,33 @@ void MarlinSettings::reset() {
       SERIAL_ECHOLNPGM("Maximum feedrates (units/s):");
     }
     CONFIG_ECHO_START;
-    SERIAL_ECHOPAIR("  M203 X", LINEAR_UNIT(planner.max_feedrate_mm_s[X_AXIS]));
-    SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_feedrate_mm_s[Y_AXIS]));
-    SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_feedrate_mm_s[Z_AXIS]));
+    #if ENABLED(HANGPRINTER)
+      SERIAL_ECHOPAIR("  M203 A", LINEAR_UNIT(planner.max_feedrate_mm_s[A_AXIS]));
+      SERIAL_ECHOPAIR(" B", LINEAR_UNIT(planner.max_feedrate_mm_s[B_AXIS]));
+      SERIAL_ECHOPAIR(" C", LINEAR_UNIT(planner.max_feedrate_mm_s[C_AXIS]));
+      SERIAL_ECHOPAIR(" D", LINEAR_UNIT(planner.max_feedrate_mm_s[D_AXIS]));
+    #else
+      SERIAL_ECHOPAIR("  M203 X", LINEAR_UNIT(planner.max_feedrate_mm_s[X_AXIS]));
+      SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_feedrate_mm_s[Y_AXIS]));
+      SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_feedrate_mm_s[Z_AXIS]));
+    #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS]));
+      #if ENABLED(HANGPRINTER)
+        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[EHP_AXIS]));
+      #else
+        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS]));
+      #endif
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M203 T", (int)i);
-        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS + i]));
+        #if ENABLED(HANGPRINTER)
+          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[EHP_AXIS + i]));
+        #else
+          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS + i]));
+        #endif
       }
     #endif
 
@@ -1770,18 +1816,33 @@ void MarlinSettings::reset() {
       SERIAL_ECHOLNPGM("Maximum Acceleration (units/s2):");
     }
     CONFIG_ECHO_START;
-    SERIAL_ECHOPAIR("  M201 X", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[X_AXIS]));
-    SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[Y_AXIS]));
-    SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[Z_AXIS]));
+    #if ENABLED(HANGPRINTER)
+      SERIAL_ECHOPAIR("  M201 A", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[A_AXIS]));
+      SERIAL_ECHOPAIR(" B", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[B_AXIS]));
+      SERIAL_ECHOPAIR(" C", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[C_AXIS]));
+      SERIAL_ECHOPAIR(" D", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[D_AXIS]));
+    #else
+      SERIAL_ECHOPAIR("  M201 X", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[X_AXIS]));
+      SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[Y_AXIS]));
+      SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[Z_AXIS]));
+    #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS]));
+      #if ENABLED(HANGPRINTER)
+        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[EHP_AXIS]));
+      #else
+        SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS]));
+      #endif
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M201 T", (int)i);
-        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS + i]));
+        #if ENABLED(HANGPRINTER)
+          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[EHP_AXIS + i]));
+        #else
+          SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS + i]));
+        #endif
       }
     #endif
 
@@ -1796,16 +1857,28 @@ void MarlinSettings::reset() {
 
     if (!forReplay) {
       CONFIG_ECHO_START;
-      SERIAL_ECHOLNPGM("Advanced: S<min_feedrate> T<min_travel_feedrate> B<min_segment_time_us> X<max_xy_jerk> Z<max_z_jerk> E<max_e_jerk>");
+      #if ENABLED(HANGPRINTER)
+        SERIAL_ECHOLNPGM("Advanced: S<min_feedrate> T<min_travel_feedrate> B<min_segment_time_us> A<max_a_jerk> B<max_b_jerk> c<max_c_jerk> d<max_d_jerk> e<max_e_jerk>");
+      #else
+        SERIAL_ECHOLNPGM("Advanced: S<min_feedrate> T<min_travel_feedrate> B<min_segment_time_us> X<max_xy_jerk> Z<max_z_jerk> E<max_e_jerk>");
+      #endif
     }
     CONFIG_ECHO_START;
     SERIAL_ECHOPAIR("  M205 S", LINEAR_UNIT(planner.min_feedrate_mm_s));
     SERIAL_ECHOPAIR(" T", LINEAR_UNIT(planner.min_travel_feedrate_mm_s));
     SERIAL_ECHOPAIR(" B", planner.min_segment_time_us);
-    SERIAL_ECHOPAIR(" X", LINEAR_UNIT(planner.max_jerk[X_AXIS]));
-    SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_jerk[Y_AXIS]));
-    SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_jerk[Z_AXIS]));
-    SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[E_AXIS]));
+    #if ENABLED(HANGPRINTER)
+      SERIAL_ECHOPAIR(" A", LINEAR_UNIT(planner.max_jerk[A_AXIS]));
+      SERIAL_ECHOPAIR(" B", LINEAR_UNIT(planner.max_jerk[B_AXIS]));
+      SERIAL_ECHOPAIR(" C", LINEAR_UNIT(planner.max_jerk[C_AXIS]));
+      SERIAL_ECHOPAIR(" D", LINEAR_UNIT(planner.max_jerk[D_AXIS]));
+      SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[EHP_AXIS]));
+    #else
+      SERIAL_ECHOPAIR(" X", LINEAR_UNIT(planner.max_jerk[X_AXIS]));
+      SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_jerk[Y_AXIS]));
+      SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_jerk[Z_AXIS]));
+      SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[E_AXIS]));
+    #endif
 
     #if HAS_M206_COMMAND
       if (!forReplay) {
@@ -1938,6 +2011,23 @@ void MarlinSettings::reset() {
       #if ENABLED(Z_DUAL_ENDSTOPS)
         SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(z_endstop_adj));
       #endif
+      SERIAL_EOL();
+    #elif ENABLED(HANGPRINTER)
+      if (!forReplay) {
+        CONFIG_ECHO_START;
+        SERIAL_ECHOLNPGM("Hangprinter specifics: W<Ay> E<Az> R<Bx> T<By> Y<Bz> U<Cx> I<Cy> O<Cz> P<Dz> S<segments_per_s>");
+      }
+      CONFIG_ECHO_START;
+      SERIAL_ECHOPAIR("  M665 W", anchor_A_y);
+      SERIAL_ECHOPAIR(" E", anchor_A_z);
+      SERIAL_ECHOPAIR(" R", anchor_B_x);
+      SERIAL_ECHOPAIR(" T", anchor_B_y);
+      SERIAL_ECHOPAIR(" Y", anchor_B_z);
+      SERIAL_ECHOPAIR(" U", anchor_C_x);
+      SERIAL_ECHOPAIR(" I", anchor_C_y);
+      SERIAL_ECHOPAIR(" O", anchor_C_z);
+      SERIAL_ECHOPAIR(" P", anchor_D_z);
+      SERIAL_ECHOPAIR(" S", delta_segments_per_second);
       SERIAL_EOL();
     #endif // DELTA
 

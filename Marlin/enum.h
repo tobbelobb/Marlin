@@ -34,7 +34,7 @@
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-#if !ENABLED(HANGPRINTER)
+#if DISABLED(HANGPRINTER)
   enum AxisEnum {
     NO_AXIS   = -1,
     X_AXIS    = 0,
@@ -56,9 +56,9 @@
     Y_AXIS    = 1,
     Z_AXIS    = 2,
     E_AXIS    = 3,
-    X_HEAD    = 4,
-    Y_HEAD    = 5,
-    Z_HEAD    = 6,
+    X_HEAD    = 5,
+    Y_HEAD    = 6,
+    Z_HEAD    = 7,
     ALL_AXES  = 100
   };
   enum HangprinterAxisEnum {
@@ -79,6 +79,11 @@
 #define LOOP_XYZ(VAR) LOOP_S_LE_N(VAR, X_AXIS, Z_AXIS)
 #define LOOP_XYZE(VAR) LOOP_S_LE_N(VAR, X_AXIS, E_AXIS)
 #define LOOP_XYZE_N(VAR) LOOP_S_L_N(VAR, X_AXIS, XYZE_N)
+#if ENABLED(HANGPRINTER)
+  #define LOOP_ABCD(VAR) LOOP_S_LE_N(VAR, A_AXIS, D_AXIS)
+  #define LOOP_ABCDE(VAR) LOOP_S_LE_N(VAR, A_AXIS, EHP_AXIS)
+  #define LOOP_ABCDE_N(VAR) LOOP_S_L_N(VAR, A_AXIS, ABCDE_N)
+#endif
 
 typedef enum {
   LINEARUNIT_MM,
