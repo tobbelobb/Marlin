@@ -84,21 +84,9 @@ block_t Planner::block_buffer[BLOCK_BUFFER_SIZE];
 volatile uint8_t Planner::block_buffer_head = 0,           // Index of the next block to be pushed
                  Planner::block_buffer_tail = 0;
 
-float Planner::max_feedrate_mm_s[XYZE_N], // Max speeds in mm per second
-      Planner::axis_steps_per_mm[
-                                 #if ENABLED(HANGPRINTER)
-                                   ABCDE_N
-                                 #else
-                                   XYZE_N
-                                 #endif
-                                 ],
-      Planner::steps_to_mm[
-                           #if ENABLED(HANGPRINTER)
-                             ABCDE_N
-                           #else
-                             XYZE_N
-                           #endif
-                          ];
+float Planner::max_feedrate_mm_s[NUM_AXIS_N], // Max speeds in mm per second
+      Planner::axis_steps_per_mm[NUM_AXIS_N],
+      Planner::steps_to_mm[NUM_AXIS_N];
 
 #if ENABLED(DISTINCT_E_FACTORS)
   uint8_t Planner::last_extruder = 0;     // Respond to extruder change
@@ -114,20 +102,8 @@ float Planner::e_factor[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(1.0); // The flow perce
         Planner::volumetric_multiplier[EXTRUDERS];  // Reciprocal of cross-sectional area of filament (in mm^2). Pre-calculated to reduce computation in the planner
 #endif
 
-uint32_t Planner::max_acceleration_steps_per_s2[
-                                                #if ENABLED(HANGPRINTER)
-                                                  ABCDE_N
-                                                #else
-                                                  XYZE_N
-                                                #endif
-                                               ],
-         Planner::max_acceleration_mm_per_s2[
-                                             #if ENABLED(HANGPRINTER)
-                                               ABCDE_N
-                                             #else
-                                               XYZE_N
-                                             #endif
-                                            ]; // Use M201 to override by software
+uint32_t Planner::max_acceleration_steps_per_s2[NUM_AXIS_N],
+         Planner::max_acceleration_mm_per_s2[NUM_AXIS_N]; // Use M201 to override by software
 
 uint32_t Planner::min_segment_time_us;
 
@@ -136,11 +112,7 @@ float Planner::min_feedrate_mm_s,
       Planner::acceleration,         // Normal acceleration mm/s^2  DEFAULT ACCELERATION for all printing moves. M204 SXXXX
       Planner::retract_acceleration, // Retract acceleration mm/s^2 filament pull-back and push-forward while standing still in the other axes M204 TXXXX
       Planner::travel_acceleration,  // Travel acceleration mm/s^2  DEFAULT ACCELERATION for all NON printing moves. M204 MXXXX
-      #if ENABLED(HANGPRINTER)
-        Planner::max_jerk[ABCDE],       // The largest speed change requiring no acceleration
-      #else
-        Planner::max_jerk[XYZE],       // The largest speed change requiring no acceleration
-      #endif
+      Planner::max_jerk[NUM_AXIS],       // The largest speed change requiring no acceleration
       Planner::min_travel_feedrate_mm_s;
 
 #if HAS_LEVELING
@@ -200,13 +172,8 @@ float Planner::previous_speed[NUM_AXIS],
 #if ENABLED(LIN_ADVANCE)
   float Planner::extruder_advance_k, // Initialized by settings.load()
         Planner::advance_ed_ratio,   // Initialized by settings.load()
-          Planner::position_float[
-                                  #if ENABLED(HANGPRINTER) // TODO: A little unsure if position_float means carthesian or movement axis position
-                                    ABCDE // Needed for accurate maths. Steps cannot be used!
-                                  #else
-                                    XYZE
-                                  #endif
-                                 ], // Needed for accurate maths. Steps cannot be used!
+        // TODO: A little unsure if position_float means carthesian or movement axis position
+        Planner::position_float[NUM_AXIS], // Needed for accurate maths. Steps cannot be used!
         Planner::lin_dist_xy,
         Planner::lin_dist_e;
 #endif
@@ -754,13 +721,7 @@ void Planner::check_axes_activity() {
  *  fr_mm_s     - (target) speed of the move
  *  extruder    - target extruder
  */
-void Planner::_buffer_steps(const int32_t (&target)[
-                                                    #if ENABLED(HANGPRINTER)
-                                                      ABCDE
-                                                    #else
-                                                      XYZE
-                                                    #endif
-                                                   ], float fr_mm_s, const uint8_t extruder) {
+void Planner::_buffer_steps(const int32_t (&target)[NUM_AXIS], float fr_mm_s, const uint8_t extruder) {
 
   #if ENABLED(HANGPRINTER)
     const int32_t da = target[A_AXIS] - position[A_AXIS],
@@ -1074,14 +1035,13 @@ void Planner::_buffer_steps(const int32_t (&target)[
       delta_mm[B_AXIS] = (db + dc) * steps_to_mm[B_AXIS];
       delta_mm[C_AXIS] = CORESIGN(db - dc) * steps_to_mm[C_AXIS];
     #endif
+  float delta_mm[NUM_AXIS];
   #elif ENABLED(HANGPRINTER)
-    float delta_mm[ABCDE];
     delta_mm[A_AXIS] = da * steps_to_mm[A_AXIS];
     delta_mm[B_AXIS] = db * steps_to_mm[B_AXIS];
     delta_mm[C_AXIS] = dc * steps_to_mm[C_AXIS];
     delta_mm[D_AXIS] = dd * steps_to_mm[D_AXIS];
   #else
-    float delta_mm[XYZE];
     delta_mm[X_AXIS] = da * steps_to_mm[X_AXIS];
     delta_mm[Y_AXIS] = db * steps_to_mm[Y_AXIS];
     delta_mm[Z_AXIS] = dc * steps_to_mm[Z_AXIS];
@@ -1099,7 +1059,7 @@ void Planner::_buffer_steps(const int32_t (&target)[
         sq(delta_mm[X_HEAD]) + sq(delta_mm[Y_AXIS]) + sq(delta_mm[Z_HEAD])
       #elif CORE_IS_YZ
         sq(delta_mm[X_AXIS]) + sq(delta_mm[Y_HEAD]) + sq(delta_mm[Z_HEAD])
-      #elif ENABLED(HANGPRINTER) // TODO: This feels weird.
+      #elif ENABLED(HANGPRINTER)
         sq(delta_mm[A_AXIS]) + sq(delta_mm[B_AXIS]) + sq(delta_mm[C_AXIS]) + sq(delta_mm[D_AXIS])
       #else
         sq(delta_mm[X_AXIS]) + sq(delta_mm[Y_AXIS]) + sq(delta_mm[Z_AXIS])
@@ -1178,11 +1138,7 @@ void Planner::_buffer_steps(const int32_t (&target)[
 
   // Calculate and limit speed in mm/sec for each axis
   float current_speed[NUM_AXIS], speed_factor = 1.0; // factor <1 decreases speed
-  #if ENABLED(HANGPRINTER)
-    LOOP_ABCDE(i) {
-  #else
-    LOOP_XYZE(i) {
-  #endif
+  LOOP_NUM_AXIS(i) {
     const float cs = FABS((current_speed[i] = delta_mm[i] * inverse_secs));
     #if ENABLED(DISTINCT_E_FACTORS)
       if (i == E_AXIS_) i += extruder;
@@ -1230,11 +1186,7 @@ void Planner::_buffer_steps(const int32_t (&target)[
 
   // Correct the speed
   if (speed_factor < 1.0) {
-    #if ENABLED(HANGPRINTER)
-      LOOP_ABCDE(i) current_speed[i] *= speed_factor;
-    #else
-      LOOP_XYZE(i) current_speed[i] *= speed_factor;
-    #endif
+    LOOP_NUM_AXIS(i) current_speed[i] *= speed_factor;
     block->nominal_speed *= speed_factor;
     block->nominal_rate *= speed_factor;
   }
@@ -1370,11 +1322,7 @@ void Planner::_buffer_steps(const int32_t (&target)[
 
   float safe_speed = block->nominal_speed;
   uint8_t limited = 0;
-  #if ENABLED(HANGPRINTER)
-    LOOP_ABCDE(i) {
-  #else
-    LOOP_XYZE(i) {
-  #endif
+  LOOP_NUM_AXIS(i) {
     const float jerk = FABS(current_speed[i]), maxj = max_jerk[i];
     if (jerk > maxj) {
       if (limited) {
@@ -1403,11 +1351,7 @@ void Planner::_buffer_steps(const int32_t (&target)[
 
     // Now limit the jerk in all axes.
     const float smaller_speed_factor = vmax_junction / previous_nominal_speed;
-    #if ENABLED(HANGPRINTER)
-      LOOP_ABCDE(axis) {
-    #else
-      LOOP_XYZE(axis) {
-    #endif
+    LOOP_NUM_AXIS(axis) {
       // Limit an axis. We have to differentiate: coasting, reversal of an axis, full stop.
       float v_exit = previous_speed[axis] * smaller_speed_factor,
             v_entry = current_speed[axis];
@@ -1539,16 +1483,14 @@ void Planner::buffer_segment(const float &a, const float &b, const float &c,
 
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps
-    const int32_t target[
+    const int32_t target[NUM_AXIS] = {
                          #if ENABLED(HANGPRINTER)
-                           ABCDE] = {
                              // TODO: insert EXPERIMENTAL_LINE_BUILDUP_COMPENSATION_FEATURE here
                              LROUND(a * axis_steps_per_mm[A_AXIS]),
                              LROUND(b * axis_steps_per_mm[B_AXIS]),
                              LROUND(c * axis_steps_per_mm[C_AXIS]),
                              LROUND(d * axis_steps_per_mm[D_AXIS]),
                          #else
-                           XYZE] = {
                              LROUND(a * axis_steps_per_mm[X_AXIS]),
                              LROUND(b * axis_steps_per_mm[Y_AXIS]),
                              LROUND(c * axis_steps_per_mm[Z_AXIS]),
@@ -1629,11 +1571,13 @@ void Planner::buffer_segment(const float &a, const float &b, const float &c,
   if (!blocks_queued()) {
 
     #define _BETWEEN(A) (position[A##_AXIS] + target[A##_AXIS]) >> 1
-    #if ENABLED(HANGPRINTER)
-      const int32_t between[ABCDE] = { _BETWEEN(A), _BETWEEN(B), _BETWEEN(C), _BETWEEN(D), _BETWEEN(E) };
-    #else
-      const int32_t between[XYZE] = { _BETWEEN(X), _BETWEEN(Y), _BETWEEN(Z), _BETWEEN(E) };
-    #endif
+    const int32_t between[NUM_AXIS] = {
+                                       #if ENABLED(HANGPRINTER)
+                                         _BETWEEN(A), _BETWEEN(B), _BETWEEN(C), _BETWEEN(D), _BETWEEN(E)
+                                       #else
+                                         _BETWEEN(X), _BETWEEN(Y), _BETWEEN(Z), _BETWEEN(E)
+                                       #endif
+                                      };
     DISABLE_STEPPER_DRIVER_INTERRUPT();
 
     #if ENABLED(LIN_ADVANCE)
@@ -1757,11 +1701,7 @@ void Planner::set_position_mm_kinematic(const float (&cart)[XYZE]) {
  * Sync from the stepper positions. (e.g., after an interrupted move)
  */
 void Planner::sync_from_steppers() {
-  #if ENABLED(HANGPRINTER)
-    LOOP_ABCDE(i) {
-  #else
-    LOOP_XYZE(i) {
-  #endif
+  LOOP_NUM_AXIS(i) {
     position[i] = stepper.position((AxisEnum)i);
     #if ENABLED(LIN_ADVANCE)
       position_float[i] = position[i] * steps_to_mm[i
@@ -1799,11 +1739,7 @@ void Planner::reset_acceleration_rates() {
     #define HIGHEST_CONDITION true
   #endif
   uint32_t highest_rate = 1;
-  #if ENABLED(HANGPRINTER)
-    LOOP_ABCDE_N(i) {
-  #else
-    LOOP_XYZE_N(i) {
-  #endif
+  LOOP_NUM_AXIS_N(i) {
     max_acceleration_steps_per_s2[i] = max_acceleration_mm_per_s2[i] * axis_steps_per_mm[i];
     if (HIGHEST_CONDITION) NOLESS(highest_rate, max_acceleration_steps_per_s2[i]);
   }
@@ -1812,12 +1748,7 @@ void Planner::reset_acceleration_rates() {
 
 // Recalculate position, steps_to_mm if axis_steps_per_mm changes!
 void Planner::refresh_positioning() {
-  #if ENABLED(HANGPRINTER)
-    LOOP_ABCDE_N(i)
-  #else
-    LOOP_XYZE_N(i)
-  #endif
-    steps_to_mm[i] = 1.0 / axis_steps_per_mm[i];
+  LOOP_NUM_AXIS_N(i) steps_to_mm[i] = 1.0 / axis_steps_per_mm[i];
   set_position_mm_kinematic(current_position);
   reset_acceleration_rates();
 }

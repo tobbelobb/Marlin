@@ -340,11 +340,7 @@ void MarlinSettings::postprocess() {
 
     working_crc = 0; // clear before first "real data"
 
-    #if ENABLED(HANGPRINTER)
-      const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - ABCD;
-    #else
-      const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - XYZ;
-    #endif
+    const uint8_t esteppers = COUNT(planner.axis_steps_per_mm) - MOV_AXIS;
     EEPROM_WRITE(esteppers);
 
     EEPROM_WRITE(planner.axis_steps_per_mm); // TODO: Hangprinter has 4 elements in these. Will break Hangprinter EEPROM. (tobben Jan 5, 2018)
@@ -1381,11 +1377,7 @@ void MarlinSettings::postprocess() {
 void MarlinSettings::reset() {
   static const float tmp1[] PROGMEM = DEFAULT_AXIS_STEPS_PER_UNIT, tmp2[] PROGMEM = DEFAULT_MAX_FEEDRATE;
   static const uint32_t tmp3[] PROGMEM = DEFAULT_MAX_ACCELERATION;
-  #if ENABLED(HANGPRINTER)
-    LOOP_ABCDE_N(i) {
-  #else
-    LOOP_XYZE_N(i) {
-  #endif
+  LOOP_NUM_AXIS_N(i) {
     planner.axis_steps_per_mm[i]          = pgm_read_float(&tmp1[i < COUNT(tmp1) ? i : COUNT(tmp1) - 1]);
     planner.max_feedrate_mm_s[i]          = pgm_read_float(&tmp2[i < COUNT(tmp2) ? i : COUNT(tmp2) - 1]);
     planner.max_acceleration_mm_per_s2[i] = pgm_read_dword_near(&tmp3[i < COUNT(tmp3) ? i : COUNT(tmp3) - 1]);

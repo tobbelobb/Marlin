@@ -1,7 +1,10 @@
 TODO: ------------------------------------------------
-Prepare planner.cpp
+Prepare Marlin_main.cpp
+        stepper.h
+        stepper.cpp
 Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS as indices for all Hangprinter geometry arrays (still X_AXIS, Y_AXIS, Z_AXIS, E_AXIS for Carthesian geometry arrays)
   And add ABCDE and ABCDE_N wherever there was XYZE and XYZE_N before
+
   - stepper.cpp
   - Marlin_main.cpp
 
@@ -94,6 +97,7 @@ This affects ABCDE arrays
   - DEFAULT_MAX_FEEDRATE
   - DEFAULT_MAX_ACCELERATION
   - homing_feedrate_mm_s[]
+  - max_feedrate_mm_s (planner.cpp)
   - axis_steps_per_mm (planner.cpp)
   - steps_to_mm (planner.cpp)
   - max_acceleration_steps_per_s2 (planner.cpp)

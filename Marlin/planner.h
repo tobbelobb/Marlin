@@ -173,46 +173,18 @@ class Planner {
                                                       // May be auto-adjusted by a filament width sensor
     #endif
 
-    static float max_feedrate_mm_s[XYZE_N],         // Max speeds in mm per second
-                 axis_steps_per_mm[
-                                   #if ENABLED(HANGPRINTER)
-                                     ABCDE_N
-                                   #else
-                                     XYZE_N
-                                   #endif
-                                   ],
-                 steps_to_mm[
-                             #if ENABLED(HANGPRINTER)
-                               ABCDE_N
-                             #else
-                               XYZE_N
-                             #endif
-                             ];
-    static uint32_t max_acceleration_steps_per_s2[
-                                                  #if ENABLED(HANGPRINTER)
-                                                    ABCDE_N
-                                                  #else
-                                                    XYZE_N
-                                                  #endif
-                                                  ],
-                    max_acceleration_mm_per_s2[
-                                               #if ENABLED(HANGPRINTER)
-                                                 ABCDE_N
-                                               #else
-                                                 XYZE_N
-                                               #endif
-                                               ]; // Use M201 to override
+    static float max_feedrate_mm_s[NUM_AXIS_N],         // Max speeds in mm per second
+                 axis_steps_per_mm[NUM_AXIS_N],
+                 steps_to_mm[NUM_AXIS_N];
+    static uint32_t max_acceleration_steps_per_s2[NUM_AXIS_N],
+                    max_acceleration_mm_per_s2[NUM_AXIS_N]; // Use M201 to override
 
     static uint32_t min_segment_time_us; // Use 'M205 B<µs>' to override
     static float min_feedrate_mm_s,
                  acceleration,         // Normal acceleration mm/s^2  DEFAULT ACCELERATION for all printing moves. M204 SXXXX
                  retract_acceleration, // Retract acceleration mm/s^2 filament pull-back and push-forward while standing still in the other axes M204 TXXXX
                  travel_acceleration,  // Travel acceleration mm/s^2  DEFAULT ACCELERATION for all NON printing moves. M204 MXXXX
-                 #if ENABLED(HANGPRINTER)
-                   max_jerk[ABCDE],       // The largest speed change requiring no acceleration
-                 #else
-                   max_jerk[XYZE],       // The largest speed change requiring no acceleration
-                 #endif
+                 max_jerk[NUM_AXIS],       // The largest speed change requiring no acceleration
                  min_travel_feedrate_mm_s;
 
     #if HAS_LEVELING
@@ -456,14 +428,7 @@ class Planner {
      *  fr_mm_s     - (target) speed of the move
      *  extruder    - target extruder
      */
-    static void _buffer_steps(const int32_t (&target)[
-                                                      #if ENABLED(HANGPRINTER)
-                                                        ABCDE
-                                                      #else
-                                                        XYZE
-                                                      #endif
-                                                        ],
-                              float fr_mm_s, const uint8_t extruder);
+    static void _buffer_steps(const int32_t (&target)[NUM_AXIS], float fr_mm_s, const uint8_t extruder);
 
     /**
      * Planner::buffer_segment
