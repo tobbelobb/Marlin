@@ -47,7 +47,7 @@
     #define Y_BED_SIZE Y_MAX_LENGTH
   #endif
 
-  // Require 0,0 bed center for Delta and SCARA
+  // Require 0,0 bed center for Delta, SCARA, and HANGPRINTER
   #if IS_KINEMATIC
     #define BED_CENTER_AT_0_0
   #endif
@@ -117,7 +117,7 @@
   #ifdef MANUAL_X_HOME_POS
     #define X_HOME_POS MANUAL_X_HOME_POS
   #elif ENABLED(BED_CENTER_AT_0_0)
-    #if ENABLED(DELTA)
+    #if (ENABLED(DELTA) || ENABLED(HANGPRINTER))
       #define X_HOME_POS 0
     #else
       #define X_HOME_POS ((X_BED_SIZE) * (X_HOME_DIR) * 0.5)
@@ -133,7 +133,7 @@
   #ifdef MANUAL_Y_HOME_POS
     #define Y_HOME_POS MANUAL_Y_HOME_POS
   #elif ENABLED(BED_CENTER_AT_0_0)
-    #if ENABLED(DELTA)
+    #if (ENABLED(DELTA) || ENABLED(HANGPRINTER))
       #define Y_HOME_POS 0
     #else
       #define Y_HOME_POS ((Y_BED_SIZE) * (Y_HOME_DIR) * 0.5)
@@ -634,6 +634,28 @@
   #define HAS_E4_STEP       (PIN_EXISTS(E4_STEP))
   #define HAS_E4_MICROSTEPS (PIN_EXISTS(E4_MS1))
   #define HAS_SOLENOID_4    (PIN_EXISTS(SOL4))
+
+  #if ENABLED(HANGPRINTER)
+    #define HAS_A_ENABLE      (PIN_EXISTS(A_ENABLE))
+    #define HAS_A_DIR         (PIN_EXISTS(A_DIR))
+    #define HAS_A_STEP        (PIN_EXISTS(A_STEP))
+    #define HAS_A_MICROSTEPS  (PIN_EXISTS(A_MS1))
+
+    #define HAS_B_ENABLE      (PIN_EXISTS(B_ENABLE))
+    #define HAS_B_DIR         (PIN_EXISTS(B_DIR))
+    #define HAS_B_STEP        (PIN_EXISTS(B_STEP))
+    #define HAS_B_MICROSTEPS  (PIN_EXISTS(B_MS1))
+
+    #define HAS_C_ENABLE      (PIN_EXISTS(C_ENABLE))
+    #define HAS_C_DIR         (PIN_EXISTS(C_DIR))
+    #define HAS_C_STEP        (PIN_EXISTS(C_STEP))
+    #define HAS_C_MICROSTEPS  (PIN_EXISTS(C_MS1))
+
+    #define HAS_D_ENABLE      (PIN_EXISTS(D_ENABLE))
+    #define HAS_D_DIR         (PIN_EXISTS(D_DIR))
+    #define HAS_D_STEP        (PIN_EXISTS(D_STEP))
+    #define HAS_D_MICROSTEPS  (PIN_EXISTS(D_MS1))
+  #endif
 
   // Endstops and bed probe
   #define HAS_X_MIN (PIN_EXISTS(X_MIN) && !IS_X2_ENDSTOP(X,MIN) && !IS_Y2_ENDSTOP(X,MIN) && !IS_Z2_OR_PROBE(X,MIN))

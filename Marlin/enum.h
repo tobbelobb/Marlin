@@ -34,7 +34,7 @@
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-#if ENABLED(HANGPRINTER) // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS_HANGPRINTER
+#if ENABLED(HANGPRINTER) // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
   enum AxisEnum {
     NO_AXIS   = -1,
     X_AXIS    = 0,
@@ -45,7 +45,7 @@
     C_AXIS    = 2,
     E_AXIS    = 3,
     D_AXIS    = 3,
-    E_AXIS_HANGPRINTER = 4,
+    EHP_AXIS  = 4,
     X_HEAD    = 5,
     Y_HEAD    = 6,
     Z_HEAD    = 7,

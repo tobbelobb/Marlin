@@ -1,6 +1,5 @@
 TODO: ------------------------------------------------
 Prepare Marlin_main.cpp
-        stepper.h
         stepper.cpp
 Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS as indices for all Hangprinter geometry arrays (still X_AXIS, Y_AXIS, Z_AXIS, E_AXIS for Carthesian geometry arrays)
   And add ABCDE and ABCDE_N wherever there was XYZE and XYZE_N before
@@ -41,7 +40,8 @@ Set sane defaults for Configuration.h
 Add ANCHOR_ABC_XYZ and ANCHOR_D_Z
 Include inverse kinematics
 Prepare planner.h
-Prepare planner.cpp
+        planner.cpp
+        stepper.h
 
 
 GENERAL STRATEGY:-------------------------------------
@@ -90,6 +90,13 @@ How to set XYZ_HEAD bits in _buffer_steps?
 The block->millimeters calculation on line 1111 of planner.cpp, is that millimeters of movement on each motor, or millimeters of effector movement?
   CORE machines treats it as millimeters of effector movement, DELTA treats it as millimeters of motor movement
 
+Why 3?
+  uint32_t Stepper::motor_current_setting[3]; // In stepper.cpp line 80 (also in stepper.h)
+  dependency on hard coded value created later:
+      if (WITHIN(driver, 0, 2))
+        motor_current_setting[driver] = current; // update motor_current_setting
+  The dependency is also hard coded into configuration_store.cpp
+
 OBSERVE: ---------------------------------------------
 Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
 This affects ABCDE arrays
@@ -110,7 +117,8 @@ This affects ABCDE arrays
   - max_jerk[] (planner.cpp)
   - previous_speed[] (planner.cpp)
   - position_float[] (planner.cpp)
-  -
+  - count_position[] (stepper.cpp)
+  - count_direction[] (stepper.cpp)
 And ABCDE functions/methods
   - _buffer_steps (planner.cpp)
   - buffer_segment (planner.cpp)
@@ -127,6 +135,14 @@ And ABCD arrays
   - SPOOL_RADII
   - STEPS_PER_SPOOL_RADIAN
 
+And #defines
+  - A_APPLY_STEP, ..., EHP_APPLY_STEP
+  - INVERT_A_STEP_PIN, ..., INVERT_EHP_STEP_PIN
+
+And macros
+  - PULSE_START(AXIS)
+  - PULSE_STOP(AXIS)
+
   Hangprinter mapping pins to axes:
   {X, Y, Z, E1, E0} <-> {A, B, C, D, E}
   Note that D axis uses the E1 pin
@@ -136,9 +152,9 @@ The following arrays are XYZE arrays
   - cart
   - raw
 
-
 TODO LATER: ------------------------------------------
 delta_segments_per_second -> kinematic_segments_per_second
+
 Separating E_AXIS/EHP_AXIS and E_AXIS_N/EHP_AXIS_N with #if ENABLED(HANGPRINTER) is not pretty
   To find all occurences of [E_AXIS], except those in the file stepper.cpp, do
     grep -rn "\[E_AXIS\]" --exclude=stepper.cpp
@@ -153,3 +169,12 @@ Separating E_AXIS/EHP_AXIS and E_AXIS_N/EHP_AXIS_N with #if ENABLED(HANGPRINTER)
 
 The way that lin_dist_xy is calculated in stepper.cpp seems to assume a cartesian robot?
   Again, it seems like DELTA does nothing about this
+
+Everything involving endstops
+Everything involving automatic homing
+
+Always use Stepper::e_steps[E_STEPPERS] instead of counter_E.
+  Right now it only uses e_steps if LIN_ADVANCE is enabled
+  Separating movement axes from tool head axes is in general a good thing.
+
+Support E1_DUAL_STEPPER_DRIVERS

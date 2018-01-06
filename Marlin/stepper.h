@@ -118,7 +118,12 @@ class Stepper {
     #endif
 
     // Counter variables for the Bresenham line tracer
-    static long counter_X, counter_Y, counter_Z, counter_E;
+    #if ENABLED(HANGPRINTER)
+      static long counter_A, counter_B, counter_C, counter_D;
+    #else
+      static long counter_X, counter_Y, counter_Z;
+    #endif
+    static long counter_E;
     static volatile uint32_t step_events_completed; // The number of step events executed in the current block
 
     #if ENABLED(LIN_ADVANCE)
@@ -197,7 +202,11 @@ class Stepper {
     //
     // Set the current position in steps
     //
-    static void set_position(const long &a, const long &b, const long &c, const long &e);
+    static void set_position(const long &a, const long &b, const long &c,
+                             #if ENABLED(HANGPRINTER)
+                               const long &d,
+                             #endif
+                             const long &e);
     static void set_position(const AxisEnum &a, const long &v);
     static void set_e_position(const long &e);
 

@@ -262,7 +262,7 @@
 /**
  * Dual Steppers / Dual Endstops
  *
- * This section will allow you to use extra E drivers to drive a second motor for X, Y, or Z axes.
+ * This section will allow you to use extra E drivers to drive a second motor for X, Y, or Z  axes (A, B, C, or D for Hangprinter).
  *
  * For example, set X_DUAL_STEPPER_DRIVERS setting to use a second motor. If the motors need to
  * spin in opposite directions set INVERT_X2_VS_X_DIR. If the second motor needs its own endstop
@@ -274,6 +274,7 @@
  * in X2. Dual endstop offsets can be set at runtime with 'M666 X<offset> Y<offset> Z<offset>'.
  */
 
+// This is the A motor on Hangprinter
 //#define X_DUAL_STEPPER_DRIVERS
 #if ENABLED(X_DUAL_STEPPER_DRIVERS)
   #define INVERT_X2_VS_X_DIR true   // Set 'true' if X motors should rotate in opposite directions
@@ -284,6 +285,7 @@
   #endif
 #endif
 
+// This is the B motor on Hangprinter
 //#define Y_DUAL_STEPPER_DRIVERS
 #if ENABLED(Y_DUAL_STEPPER_DRIVERS)
   #define INVERT_Y2_VS_Y_DIR true   // Set 'true' if Y motors should rotate in opposite directions
@@ -294,6 +296,7 @@
   #endif
 #endif
 
+// This is the C motor on Hangprinter
 //#define Z_DUAL_STEPPER_DRIVERS
 #if ENABLED(Z_DUAL_STEPPER_DRIVERS)
   //#define Z_DUAL_ENDSTOPS

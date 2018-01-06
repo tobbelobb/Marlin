@@ -171,6 +171,7 @@ void manage_inactivity(bool ignore_stepper_queue = false);
 
 /**
  * The axis order in all axis related arrays is X, Y, Z, E
+ * For Hangprinter it is A, B, C, D, E
  */
 #define _AXIS(AXIS) AXIS ##_AXIS
 

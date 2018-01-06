@@ -95,10 +95,17 @@ int16_t Stepper::cleaning_buffer_counter = 0;
   bool Stepper::locked_z_motor = false, Stepper::locked_z2_motor = false;
 #endif
 
-long Stepper::counter_X = 0,
-     Stepper::counter_Y = 0,
-     Stepper::counter_Z = 0,
-     Stepper::counter_E = 0;
+#if ENABLED(HANGPRINTER)
+  long Stepper::counter_A = 0,
+       Stepper::counter_B = 0,
+       Stepper::counter_C = 0,
+       Stepper::counter_D = 0,
+#else
+  long Stepper::counter_X = 0,
+       Stepper::counter_Y = 0,
+       Stepper::counter_Z = 0,
+#endif
+       Stepper::counter_E = 0;
 
 volatile uint32_t Stepper::step_events_completed = 0; // The number of step events executed in the current block
 
@@ -135,7 +142,11 @@ volatile uint32_t Stepper::step_events_completed = 0; // The number of step even
 long Stepper::acceleration_time, Stepper::deceleration_time;
 
 volatile long Stepper::count_position[NUM_AXIS] = { 0 };
-volatile signed char Stepper::count_direction[NUM_AXIS] = { 1, 1, 1, 1 };
+volatile signed char Stepper::count_direction[NUM_AXIS] = { 1, 1, 1, 1
+                                                           #if ENABLED(HANGPRINTER)
+                                                             , 1
+                                                           #endif
+                                                          };
 
 #if ENABLED(MIXING_EXTRUDER)
   long Stepper::counter_m[MIXING_STEPPERS];
@@ -223,6 +234,44 @@ volatile long Stepper::endstops_trigsteps[XYZ];
 #else
   #define Z_APPLY_DIR(v,Q) Z_DIR_WRITE(v)
   #define Z_APPLY_STEP(v,Q) Z_STEP_WRITE(v)
+#endif
+
+/**
+ * Hangprinter's mapping {A,B,C,D} <-> {X,Y,Z,E1} happens here.
+ * If you have two extruders, search and replace E1->E2 in the below block
+ * to place D motor on E2-pins and leave the E0 and E1-pins to the two extruders.
+ */
+#if ENABLED(HANGPRINTER)
+  #define A_ENABLE_PIN      X_ENABLE_PIN
+  #define A_DIR_PIN         X_DIR_PIN
+  #define A_STEP_PIN        X_STEP_PIN
+  #define A_MS1_PIN         X_MS1_PIN
+  #define A_APPLY_DIR(v,Q)  X_APPLY_DIR(v,Q)
+  #define A_APPLY_STEP(v,Q) X_APPLY_STEP(v,Q)
+
+  #define B_ENABLE_PIN      Y_ENABLE_PIN
+  #define B_DIR_PIN         Y_DIR_PIN
+  #define B_STEP_PIN        Y_STEP_PIN
+  #define B_MS1_PIN         Y_MS1_PIN
+  #define B_APPLY_DIR(v,Q)  Y_APPLY_DIR(v,Q)
+  #define B_APPLY_STEP(v,Q) Y_APPLY_STEP(v,Q)
+
+  #define C_ENABLE_PIN      Z_ENABLE_PIN
+  #define C_DIR_PIN         Z_DIR_PIN
+  #define C_STEP_PIN        Z_STEP_PIN
+  #define C_MS1_PIN         Z_MS1_PIN
+  #define C_APPLY_DIR(v,Q)  Z_APPLY_DIR(v,Q)
+  #define C_APPLY_STEP(v,Q) Z_APPLY_STEP(v,Q)
+
+  #define E1_APPLY_DIR(v,Q) E1_DIR_WRITE(v)
+  #define E1_APPLY_STEP(v,Q) E1_STEP_WRITE(v)
+
+  #define D_ENABLE_PIN      E1_ENABLE_PIN
+  #define D_DIR_PIN         E1_DIR_PIN
+  #define D_STEP_PIN        E1_STEP_PIN
+  #define D_MS1_PIN         E1_MS1_PIN
+  #define D_APPLY_DIR(v,Q)  E1_APPLY_DIR(v,Q)
+  #define D_APPLY_STEP(v,Q) E1_APPLY_STEP(v,Q)
 #endif
 
 #if DISABLED(MIXING_EXTRUDER)
@@ -339,13 +388,13 @@ void Stepper::set_directions() {
   #endif
 
   #if DISABLED(LIN_ADVANCE)
-    if (motor_direction(E_AXIS)) {
+    if (motor_direction(E_AXIS_)) {
       REV_E_DIR();
-      count_direction[E_AXIS] = -1;
+      count_direction[E_AXIS_] = -1;
     }
     else {
       NORM_E_DIR();
-      count_direction[E_AXIS] = 1;
+      count_direction[E_AXIS_] = 1;
     }
   #endif // !LIN_ADVANCE
 }
@@ -453,7 +502,11 @@ void Stepper::isr() {
       trapezoid_generator_reset();
 
       // Initialize Bresenham counters to 1/2 the ceiling
-      counter_X = counter_Y = counter_Z = counter_E = -(current_block->step_event_count >> 1);
+      #if ENABLED(HANGPRINTER)
+        counter_A = counter_B = counter_C = counter_D = counter_E = -(current_block->step_event_count >> 1);
+      #else
+        counter_X = counter_Y = counter_Z = counter_E = -(current_block->step_event_count >> 1);
+      #endif
 
       #if ENABLED(MIXING_EXTRUDER)
         MIXING_STEPPERS_LOOP(i)
@@ -498,21 +551,21 @@ void Stepper::isr() {
   for (uint8_t i = step_loops; i--;) {
     #if ENABLED(LIN_ADVANCE)
 
-      counter_E += current_block->steps[E_AXIS];
+      counter_E += current_block->steps[E_AXIS_];
       if (counter_E > 0) {
         counter_E -= current_block->step_event_count;
         #if DISABLED(MIXING_EXTRUDER)
           // Don't step E here for mixing extruder
-          count_position[E_AXIS] += count_direction[E_AXIS];
-          motor_direction(E_AXIS) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
+          count_position[E_AXIS_] += count_direction[E_AXIS_];
+          motor_direction(E_AXIS_) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
         #endif
       }
 
       #if ENABLED(MIXING_EXTRUDER)
         // Step mixing steppers proportionally
-        const bool dir = motor_direction(E_AXIS);
+        const bool dir = motor_direction(E_AXIS_);
         MIXING_STEPPERS_LOOP(j) {
-          counter_m[j] += current_block->steps[E_AXIS];
+          counter_m[j] += current_block->steps[E_AXIS_];
           if (counter_m[j] > 0) {
             counter_m[j] -= current_block->mix_event_count[j];
             dir ? --e_steps[j] : ++e_steps[j];
@@ -536,6 +589,19 @@ void Stepper::isr() {
       if (_COUNTER(AXIS) > 0) { \
         _COUNTER(AXIS) -= current_block->step_event_count; \
         count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
+        _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
+      }
+
+    // PULSE_START/STOP(E) won't work with Hangprinter since E_AXIS = D_AXIS = 3
+    // The following will work because E_AXIS_ is correct for both Hangprinter and others
+    #define PULSE_START_E \
+      counter_E += current_block->steps[E_AXIS_]; \
+      if (counter_E > 0) { _APPLY_STEP(AXIS)(!_INVERT_STEP_PIN(AXIS),0); }
+
+    #define PULSE_STOP_E \
+      if (counter_E > 0) { \
+        counter_E -= current_block->step_event_count; \
+        count_position[E_AXIS_] += count_direction[E_AXIS_]; \
         _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
       }
 
@@ -581,17 +647,40 @@ void Stepper::isr() {
     #else
       #define _CYCLE_APPROX_6 _CYCLE_APPROX_5
     #endif
-    #if DISABLED(LIN_ADVANCE)
-      #if ENABLED(MIXING_EXTRUDER)
-        #define _CYCLE_APPROX_7 _CYCLE_APPROX_6 + (MIXING_STEPPERS) * 6
-      #else
+    #if ENABLED(HANGPRINTER)
+      #if HAS_E1_STEP
         #define _CYCLE_APPROX_7 _CYCLE_APPROX_6 + 5
+      #else
+        #define _CYCLE_APPROX_7 _CYCLE_APPROX_6
       #endif
+    #endif // HANGPRINTER
+    #if DISABLED(LIN_ADVANCE)
+      #if ENABLED(HANGPRINTER)
+        #if ENABLED(MIXING_EXTRUDER)
+          #define _CYCLE_APPROX_8 _CYCLE_APPROX_7 + (MIXING_STEPPERS) * 6
+        #else
+          #define _CYCLE_APPROX_8 _CYCLE_APPROX_7 + 5
+        #endif
+      #else
+        #if ENABLED(MIXING_EXTRUDER)
+          #define _CYCLE_APPROX_7 _CYCLE_APPROX_6 + (MIXING_STEPPERS) * 6
+        #else
+          #define _CYCLE_APPROX_7 _CYCLE_APPROX_6 + 5
+        #endif
+      #endif // HANGPRINTER
     #else
-      #define _CYCLE_APPROX_7 _CYCLE_APPROX_6
+      #if ENABLED(HANGPRINTER)
+        #define _CYCLE_APPROX_8 _CYCLE_APPROX_7
+      #else
+        #define _CYCLE_APPROX_7 _CYCLE_APPROX_6
+      #endif
     #endif
 
-    #define CYCLES_EATEN_XYZE _CYCLE_APPROX_7
+    #if ENABLED(HANGPRINTER)
+      #define CYCLES_EATEN_XYZE _CYCLE_APPROX_8
+    #else
+      #define CYCLES_EATEN_XYZE _CYCLE_APPROX_7
+    #endif
     #define EXTRA_CYCLES_XYZE (STEP_PULSE_CYCLES - (CYCLES_EATEN_XYZE))
 
     /**
@@ -606,30 +695,45 @@ void Stepper::isr() {
       uint32_t pulse_start = TCNT0;
     #endif
 
-    #if HAS_X_STEP
-      PULSE_START(X);
-    #endif
-    #if HAS_Y_STEP
-      PULSE_START(Y);
-    #endif
-    #if HAS_Z_STEP
-      PULSE_START(Z);
-    #endif
+    #if ENABLED(HANGPRINTER)
+      #if HAS_A_STEP
+        PULSE_START(A);
+      #endif
+      #if HAS_B_STEP
+        PULSE_START(B);
+      #endif
+      #if HAS_C_STEP
+        PULSE_START(C);
+      #endif
+      #if HAS_D_STEP
+        PULSE_START(D);
+      #endif
+    #else
+      #if HAS_X_STEP
+        PULSE_START(X);
+      #endif
+      #if HAS_Y_STEP
+        PULSE_START(Y);
+      #endif
+      #if HAS_Z_STEP
+        PULSE_START(Z);
+      #endif
+    #endif // HANGPRINTER
 
     // For non-advance use linear interpolation for E also
     #if DISABLED(LIN_ADVANCE)
       #if ENABLED(MIXING_EXTRUDER)
         // Keep updating the single E axis
-        counter_E += current_block->steps[E_AXIS];
+        counter_E += current_block->steps[E_AXIS_];
         // Tick the counters used for this mix
         MIXING_STEPPERS_LOOP(j) {
           // Step mixing steppers (proportionally)
-          counter_m[j] += current_block->steps[E_AXIS];
+          counter_m[j] += current_block->steps[E_AXIS_];
           // Step when the counter goes over zero
           if (counter_m[j] > 0) En_STEP_WRITE(j, !INVERT_E_STEP_PIN);
         }
       #else // !MIXING_EXTRUDER
-        PULSE_START(E);
+        PULSE_START_E;
       #endif
     #endif // !LIN_ADVANCE
 
@@ -641,14 +745,29 @@ void Stepper::isr() {
       DELAY_NOPS(EXTRA_CYCLES_XYZE);
     #endif
 
-    #if HAS_X_STEP
-      PULSE_STOP(X);
-    #endif
-    #if HAS_Y_STEP
-      PULSE_STOP(Y);
-    #endif
-    #if HAS_Z_STEP
-      PULSE_STOP(Z);
+    #if ENABLED(HANGPRINTER)
+      #if HAS_A_STEP
+        PULSE_STOP(A);
+      #endif
+      #if HAS_B_STEP
+        PULSE_STOP(B);
+      #endif
+      #if HAS_C_STEP
+        PULSE_STOP(C);
+      #endif
+      #if HAS_D_STEP
+        PULSE_STOP(D);
+      #endif
+    #else
+      #if HAS_X_STEP
+        PULSE_STOP(X);
+      #endif
+      #if HAS_Y_STEP
+        PULSE_STOP(Y);
+      #endif
+      #if HAS_Z_STEP
+        PULSE_STOP(Z);
+      #endif
     #endif
 
     #if DISABLED(LIN_ADVANCE)
@@ -656,7 +775,7 @@ void Stepper::isr() {
         // Always step the single E axis
         if (counter_E > 0) {
           counter_E -= current_block->step_event_count;
-          count_position[E_AXIS] += count_direction[E_AXIS];
+          count_position[E_AXIS_] += count_direction[E_AXIS_];
         }
         MIXING_STEPPERS_LOOP(j) {
           if (counter_m[j] > 0) {
@@ -665,7 +784,7 @@ void Stepper::isr() {
           }
         }
       #else // !MIXING_EXTRUDER
-        PULSE_STOP(E);
+        PULSE_STOP_E;
       #endif
     #endif // !LIN_ADVANCE
 
@@ -1151,7 +1270,11 @@ void Stepper::synchronize() { while (planner.blocks_queued() || cleaning_buffer_
  * This allows get_axis_position_mm to correctly
  * derive the current XYZ position later on.
  */
-void Stepper::set_position(const long &a, const long &b, const long &c, const long &e) {
+void Stepper::set_position(const long &a, const long &b, const long &c,
+                           #if ENABLED(HANGPRINTER)
+                             const long &d,
+                           #endif
+                           const long &e) {
 
   synchronize(); // Bad to set stepper counts in the middle of a move
 
@@ -1173,6 +1296,11 @@ void Stepper::set_position(const long &a, const long &b, const long &c, const lo
     count_position[X_AXIS] = a;
     count_position[B_AXIS] = b + c;
     count_position[C_AXIS] = CORESIGN(b - c);
+  #elif ENABLED(HANGPRINTER)
+    count_position[A_AXIS] = a;
+    count_position[B_AXIS] = b;
+    count_position[C_AXIS] = c;
+    count_position[D_AXIS] = d;
   #else
     // default non-h-bot planning
     count_position[X_AXIS] = a;
@@ -1180,7 +1308,7 @@ void Stepper::set_position(const long &a, const long &b, const long &c, const lo
     count_position[Z_AXIS] = c;
   #endif
 
-  count_position[E_AXIS] = e;
+  count_position[E_AXIS_] = e;
   CRITICAL_SECTION_END;
 }
 
@@ -1192,7 +1320,7 @@ void Stepper::set_position(const AxisEnum &axis, const long &v) {
 
 void Stepper::set_e_position(const long &e) {
   CRITICAL_SECTION_START;
-  count_position[E_AXIS] = e;
+  count_position[E_AXIS_] = e;
   CRITICAL_SECTION_END;
 }
 
@@ -1271,29 +1399,37 @@ void Stepper::report_positions() {
   CRITICAL_SECTION_START;
   const long xpos = count_position[X_AXIS],
              ypos = count_position[Y_AXIS],
+             #if ENABLED(HANGPRINTER)
+               dpos = count_position[D_AXIS],
+             #endif
              zpos = count_position[Z_AXIS];
   CRITICAL_SECTION_END;
 
-  #if CORE_IS_XY || CORE_IS_XZ || IS_SCARA
+  #if CORE_IS_XY || CORE_IS_XZ || IS_SCARA || ENABLED(HANGPRINTER)
     SERIAL_PROTOCOLPGM(MSG_COUNT_A);
   #else
     SERIAL_PROTOCOLPGM(MSG_COUNT_X);
   #endif
   SERIAL_PROTOCOL(xpos);
 
-  #if CORE_IS_XY || CORE_IS_YZ || IS_SCARA
+  #if CORE_IS_XY || CORE_IS_YZ || IS_SCARA || ENABLED(HANGPRINTER)
     SERIAL_PROTOCOLPGM(" B:");
   #else
     SERIAL_PROTOCOLPGM(" Y:");
   #endif
   SERIAL_PROTOCOL(ypos);
 
-  #if CORE_IS_XZ || CORE_IS_YZ
+  #if CORE_IS_XZ || CORE_IS_YZ || ENABLED(HANGPRINTER)
     SERIAL_PROTOCOLPGM(" C:");
   #else
     SERIAL_PROTOCOLPGM(" Z:");
   #endif
   SERIAL_PROTOCOL(zpos);
+
+  #if ENABLED(HANGPRINTER)
+    SERIAL_PROTOCOLPGM(" D:");
+    SERIAL_PROTOCOL(dpos);
+  #endif
 
   SERIAL_EOL();
 }
