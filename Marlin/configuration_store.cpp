@@ -1399,7 +1399,7 @@ void MarlinSettings::reset() {
     planner.max_jerk[Y_AXIS] = DEFAULT_YJERK;
     planner.max_jerk[Z_AXIS] = DEFAULT_ZJERK;
   #endif
-  planner.max_jerk[E_AXIS_] = DEFAULT_EJERK;
+  planner.max_jerk[E_AXIS] = DEFAULT_EJERK;
 
   #if HAS_HOME_OFFSET
     ZERO(home_offset);
@@ -1490,7 +1490,7 @@ void MarlinSettings::reset() {
     anchor_C_y = ANCHOR_C_Y;
     anchor_C_z = ANCHOR_C_Z;
     anchor_D_z = ANCHOR_D_Z;
-    HANGPRINTER_IK_ORIGIN(); // Modifies line_lengths[ABCD]
+    HANGPRINTER_IK_ORIGIN; // Modifies line_lengths[ABCD]
   #endif
 
   #if ENABLED(ULTIPANEL)
@@ -1748,14 +1748,14 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.axis_steps_per_mm[Z_AXIS]));
     #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS_]));
+      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS]));
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M92 T", (int)i);
-        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS_ + i]));
+        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.axis_steps_per_mm[E_AXIS + i]));
       }
     #endif
 
@@ -1775,14 +1775,14 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_feedrate_mm_s[Z_AXIS]));
     #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS_]));
+      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS]));
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M203 T", (int)i);
-        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS_ + i]));
+        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_feedrate_mm_s[E_AXIS + i]));
       }
     #endif
 
@@ -1802,14 +1802,14 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_acceleration_mm_per_s2[Z_AXIS]));
     #endif
     #if DISABLED(DISTINCT_E_FACTORS)
-      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS_]));
+      SERIAL_ECHOPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS]));
     #endif
     SERIAL_EOL();
     #if ENABLED(DISTINCT_E_FACTORS)
       CONFIG_ECHO_START;
       for (uint8_t i = 0; i < E_STEPPERS; i++) {
         SERIAL_ECHOPAIR("  M201 T", (int)i);
-        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS_ + i]));
+        SERIAL_ECHOLNPAIR(" E", VOLUMETRIC_UNIT(planner.max_acceleration_mm_per_s2[E_AXIS + i]));
       }
     #endif
 
@@ -1844,7 +1844,7 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(planner.max_jerk[Y_AXIS]));
       SERIAL_ECHOPAIR(" Z", LINEAR_UNIT(planner.max_jerk[Z_AXIS]));
     #endif
-    SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[E_AXIS_]));
+    SERIAL_ECHOLNPAIR(" E", LINEAR_UNIT(planner.max_jerk[E_AXIS]));
 
     #if HAS_M206_COMMAND
       if (!forReplay) {

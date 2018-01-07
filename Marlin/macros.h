@@ -23,18 +23,6 @@
 #ifndef MACROS_H
 #define MACROS_H
 
-/**
- * MOV_AXIS: number of independent axes driving the tool head's translational movement
- * NUM_AXIS: number of movement axes + 1
- * NUM_AXIS_N: number of movement axes + number of extruders (defined elsewhere)
- */
-#if defined(HANGPRINTER) // ENABLED macro not defined yet...
-  #define MOV_AXIS 4
-  #define NUM_AXIS 5
-#else
-  #define MOV_AXIS 3
-  #define NUM_AXIS 4
-#endif
 #define XYZ   3
 #define XYZE  4
 #define ABC   3

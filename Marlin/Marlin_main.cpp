@@ -792,14 +792,18 @@ void report_current_position_detail();
  *
  * Set the planner/stepper positions directly from current_position with
  * no kinematic translation. Used for homing axes and cartesian/core syncing.
+ *
+ * This is not possible for Hangprinter because current_position and position are different sizes
  */
 void sync_plan_position() {
-  #if ENABLED(DEBUG_LEVELING_FEATURE)
-    if (DEBUGGING(LEVELING)) DEBUG_POS("sync_plan_position", current_position);
+  #if DISABLED(HANGPRINTER)
+    #if ENABLED(DEBUG_LEVELING_FEATURE)
+      if (DEBUGGING(LEVELING)) DEBUG_POS("sync_plan_position", current_position);
+    #endif
+    planner.set_position_mm(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_CART]);
   #endif
-  planner.set_position_mm(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 }
-inline void sync_plan_position_e() { planner.set_e_position_mm(current_position[E_AXIS]); }
+inline void sync_plan_position_e() { planner.set_e_position_mm(current_position[E_CART]); }
 
 #if IS_KINEMATIC
 
@@ -1543,7 +1547,9 @@ inline float get_homing_bump_feedrate(const AxisEnum axis) {
  * (or from wherever it has been told it is located).
  */
 inline void buffer_line_to_current_position() {
-  planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], feedrate_mm_s, active_extruder);
+  #if DISABLED(HANGPRINTER) // this probably breaks do_blocking_move_to()
+    planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_CART], feedrate_mm_s, active_extruder);
+  #endif
 }
 
 /**
@@ -1551,7 +1557,9 @@ inline void buffer_line_to_current_position() {
  * used by G0/G1/G2/G3/G5 and many other functions to set a destination.
  */
 inline void buffer_line_to_destination(const float fr_mm_s) {
-  planner.buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], fr_mm_s, active_extruder);
+  #if DISABLED(HANGPRINTER)
+    planner.buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_CART], fr_mm_s, active_extruder);
+  #endif
 }
 
 #if IS_KINEMATIC
@@ -1572,7 +1580,7 @@ inline void buffer_line_to_destination(const float fr_mm_s) {
       if ( current_position[X_AXIS] == destination[X_AXIS]
         && current_position[Y_AXIS] == destination[Y_AXIS]
         && current_position[Z_AXIS] == destination[Z_AXIS]
-        && current_position[E_AXIS] == destination[E_AXIS]
+        && current_position[E_CART] == destination[E_CART]
       ) return;
 
       planner.buffer_line_kinematic(destination, MMS_SCALED(fr_mm_s ? fr_mm_s : feedrate_mm_s), active_extruder);
@@ -2865,11 +2873,16 @@ static void do_homing_move(const AxisEnum axis, const float distance, const floa
     SYNC_PLAN_POSITION_KINEMATIC();
     current_position[axis] = distance;
     inverse_kinematics(current_position);
-    planner.buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], current_position[E_AXIS], fr_mm_s ? fr_mm_s : homing_feedrate(axis), active_extruder);
+    planner.buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], current_position[E_CART], fr_mm_s ? fr_mm_s : homing_feedrate(axis), active_extruder);
+  #elif ENABLED(HANGPRINTER) // TODO: Hangprinter homing is not finished (Jan 7, 2018)
+    SYNC_PLAN_POSITION_KINEMATIC();
+    current_position[axis] = distance;
+    inverse_kinematics(current_position);
+    planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], current_position[E_CART], fr_mm_s ? fr_mm_s : homing_feedrate(axis), active_extruder);
   #else
     sync_plan_position();
     current_position[axis] = distance;
-    planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], fr_mm_s ? fr_mm_s : homing_feedrate(axis), active_extruder);
+    planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_CART], fr_mm_s ? fr_mm_s : homing_feedrate(axis), active_extruder);
   #endif
 
   stepper.synchronize();
@@ -3167,7 +3180,7 @@ static void homeaxis(const AxisEnum axis) {
     if (retracting) {
       // Retract by moving from a faux E position back to the current E position
       feedrate_mm_s = retract_feedrate_mm_s;
-      current_position[E_AXIS] += (swapping ? swap_retract_length : retract_length) * renormalize;
+      current_position[E_CART] += (swapping ? swap_retract_length : retract_length) * renormalize;
       sync_plan_position_e();
       prepare_move_to_destination();
 
@@ -3195,7 +3208,7 @@ static void homeaxis(const AxisEnum axis) {
       feedrate_mm_s = swapping ? swap_retract_recover_feedrate_mm_s : retract_recover_feedrate_mm_s;
 
       const float move_e = swapping ? swap_retract_length + swap_retract_recover_length : retract_length + retract_recover_length;
-      current_position[E_AXIS] -= move_e * renormalize;
+      current_position[E_CART] -= move_e * renormalize;
       sync_plan_position_e();
       prepare_move_to_destination();                        // Recover E
     }
@@ -3283,7 +3296,7 @@ void gcode_get_destination() {
   LOOP_XYZE(i) {
     if (parser.seen(axis_codes[i])) {
       const float v = parser.value_axis_units((AxisEnum)i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
-      destination[i] = i == E_AXIS ? v : LOGICAL_TO_NATIVE(v, i);
+      destination[i] = i == E_CART ? v : LOGICAL_TO_NATIVE(v, i);
     }
     else
       destination[i] = current_position[i];
@@ -3294,7 +3307,7 @@ void gcode_get_destination() {
 
   #if ENABLED(PRINTCOUNTER)
     if (!DEBUGGING(DRYRUN))
-      print_job_timer.incFilamentUsed(destination[E_AXIS] - current_position[E_AXIS]);
+      print_job_timer.incFilamentUsed(destination[E_CART] - current_position[E_CART]);
   #endif
 
   // Get ABCDHI mixing factors
@@ -3362,10 +3375,10 @@ inline void gcode_G0_G1(
       if (MIN_AUTORETRACT <= MAX_AUTORETRACT) {
         // When M209 Autoretract is enabled, convert E-only moves to firmware retract/recover moves
         if (autoretract_enabled && parser.seen('E') && !(parser.seen('X') || parser.seen('Y') || parser.seen('Z'))) {
-          const float echange = destination[E_AXIS] - current_position[E_AXIS];
+          const float echange = destination[E_CART] - current_position[E_CART];
           // Is this a retract or recover move?
           if (WITHIN(FABS(echange), MIN_AUTORETRACT, MAX_AUTORETRACT) && retracted[active_extruder] == (echange > 0.0)) {
-            current_position[E_AXIS] = destination[E_AXIS]; // Hide a G1-based retract/recover from calculations
+            current_position[E_CART] = destination[E_CART]; // Hide a G1-based retract/recover from calculations
             sync_plan_position_e();                         // AND from the planner
             return retract(echange < 0.0);                  // Firmware-based retract/recover (double-retract ignored)
           }
@@ -6226,16 +6239,16 @@ inline void gcode_G92() {
   if (IS_G92_0) LOOP_XYZE(i) {
     if (parser.seenval(axis_codes[i])) {
       const float l = parser.value_axis_units((AxisEnum)i),
-                  v = i == E_AXIS ? l : LOGICAL_TO_NATIVE(l, i),
+                  v = i == E_CART ? l : LOGICAL_TO_NATIVE(l, i),
                   d = v - current_position[i];
       if (!NEAR_ZERO(d)) {
         #if IS_SCARA || !HAS_POSITION_SHIFT
-          if (i == E_AXIS) didE = true; else didXYZ = true;
+          if (i == E_CART) didE = true; else didXYZ = true;
           current_position[i] = v;        // Without workspaces revert to Marlin 1.0 behavior
         #elif HAS_POSITION_SHIFT
-          if (i == E_AXIS) {
+          if (i == E_CART) {
             didE = true;
-            current_position[E_AXIS] = v; // When using coordinate spaces, only E is set directly
+            current_position[E_CART] = v; // When using coordinate spaces, only E is set directly
           }
           else {
             position_shift[i] += d;       // Other axes simply offset the coordinate space
@@ -6495,7 +6508,7 @@ inline void gcode_M17() {
   #endif
 
   void do_pause_e_move(const float &length, const float fr) {
-    current_position[E_AXIS] += length / planner.e_factor[active_extruder];
+    current_position[E_CART] += length / planner.e_factor[active_extruder];
     set_destination_from_current();
     RUNPLAN(fr);
     stepper.synchronize();
@@ -6726,8 +6739,8 @@ inline void gcode_M17() {
     #endif
 
     // Set extruder to saved position
-    destination[E_AXIS] = current_position[E_AXIS] = resume_position[E_AXIS];
-    planner.set_e_position_mm(current_position[E_AXIS]);
+    destination[E_CART] = current_position[E_CART] = resume_position[E_CART];
+    planner.set_e_position_mm(current_position[E_CART]);
 
     // Move XY to starting position, then Z
     do_blocking_move_to_xy(resume_position[X_AXIS], resume_position[Y_AXIS], NOZZLE_PARK_XY_FEEDRATE);
@@ -8251,12 +8264,12 @@ inline void gcode_M81() {
 /**
  * M82: Set E codes absolute (default)
  */
-inline void gcode_M82() { axis_relative_modes[E_AXIS] = false; }
+inline void gcode_M82() { axis_relative_modes[E_CART] = false; }
 
 /**
  * M83: Set E codes relative while in Absolute Coordinates (G90) mode
  */
-inline void gcode_M83() { axis_relative_modes[E_AXIS] = true; }
+inline void gcode_M83() { axis_relative_modes[E_CART] = true; }
 
 /**
  * M18, M84: Disable stepper motors
@@ -8306,6 +8319,7 @@ inline void gcode_M85() {
 
 /**
  * M92: Set axis steps-per-unit for one or more axes, X, Y, Z, and E.
+ *      (for Hangprinter: A, B, C, D, and E)
  *      (Follows the same syntax as G92)
  *
  *      With multiple extruders use T to specify which one.
@@ -8314,8 +8328,14 @@ inline void gcode_M92() {
 
   GET_TARGET_EXTRUDER(92);
 
-  LOOP_XYZE(i) {
-    if (parser.seen(axis_codes[i])) {
+  LOOP_NUM_AXIS(i) {
+    if (parser.seen(
+          #if ENABLED(HANGPRINTER)
+            axis_codes_hangprinter
+          #else
+            axis_codes
+          #endif
+          [i])) {
       if (i == E_AXIS) {
         const float value = parser.value_per_axis_unit((AxisEnum)(E_AXIS + TARGET_EXTRUDER));
         if (value < 20.0) {
@@ -8345,7 +8365,7 @@ void report_current_position() {
   SERIAL_PROTOCOLPGM(" Z:");
   SERIAL_PROTOCOL(LOGICAL_Z_POSITION(current_position[Z_AXIS]));
   SERIAL_PROTOCOLPGM(" E:");
-  SERIAL_PROTOCOL(current_position[E_AXIS]);
+  SERIAL_PROTOCOL(current_position[E_CART]);
 
   stepper.report_positions();
 
@@ -8436,7 +8456,7 @@ void report_current_position() {
       from_steppers[X_AXIS] - leveled[X_AXIS],
       from_steppers[Y_AXIS] - leveled[Y_AXIS],
       from_steppers[Z_AXIS] - leveled[Z_AXIS],
-      from_steppers[E_AXIS] - current_position[E_AXIS]
+      from_steppers[E_CART] - current_position[E_CART]
     };
     SERIAL_PROTOCOLPGM("Differ: ");
     report_xyze(diff);
@@ -8723,8 +8743,14 @@ inline void gcode_M201() {
 
   GET_TARGET_EXTRUDER(201);
 
-  LOOP_XYZE(i) {
-    if (parser.seen(axis_codes[i])) {
+  LOOP_NUM_AXIS(i) {
+    if (parser.seen(
+          #if ENABLED(HANGPRINTER)
+            axis_codes_hangprinter
+          #else
+            axis_codes
+          #endif
+          [i])) {
       const uint8_t a = i + (i == E_AXIS ? TARGET_EXTRUDER : 0);
       planner.max_acceleration_mm_per_s2[a] = parser.value_axis_units((AxisEnum)a);
     }
@@ -8751,8 +8777,14 @@ inline void gcode_M203() {
 
   GET_TARGET_EXTRUDER(203);
 
-  LOOP_XYZE(i)
-    if (parser.seen(axis_codes[i])) {
+  LOOP_NUM_AXIS(i)
+    if (parser.seen(
+          #if ENABLED(HANGPRINTER)
+            axis_codes_hangprinter
+          #else
+            axis_codes
+          #endif
+          [i])) {
       const uint8_t a = i + (i == E_AXIS ? TARGET_EXTRUDER : 0);
       planner.max_feedrate_mm_s[a] = parser.value_axis_units((AxisEnum)a);
     }
@@ -8801,9 +8833,16 @@ inline void gcode_M205() {
   if (parser.seen('S')) planner.min_feedrate_mm_s = parser.value_linear_units();
   if (parser.seen('T')) planner.min_travel_feedrate_mm_s = parser.value_linear_units();
   if (parser.seen('B')) planner.min_segment_time_us = parser.value_ulong();
-  if (parser.seen('X')) planner.max_jerk[X_AXIS] = parser.value_linear_units();
-  if (parser.seen('Y')) planner.max_jerk[Y_AXIS] = parser.value_linear_units();
-  if (parser.seen('Z')) planner.max_jerk[Z_AXIS] = parser.value_linear_units();
+  #if ENABLED(HANGPRINTER)
+    if (parser.seen('A')) planner.max_jerk[A_AXIS] = parser.value_linear_units();
+    if (parser.seen('B')) planner.max_jerk[B_AXIS] = parser.value_linear_units();
+    if (parser.seen('C')) planner.max_jerk[C_AXIS] = parser.value_linear_units();
+    if (parser.seen('D')) planner.max_jerk[D_AXIS] = parser.value_linear_units();
+  #else
+    if (parser.seen('X')) planner.max_jerk[X_AXIS] = parser.value_linear_units();
+    if (parser.seen('Y')) planner.max_jerk[Y_AXIS] = parser.value_linear_units();
+    if (parser.seen('Z')) planner.max_jerk[Z_AXIS] = parser.value_linear_units();
+  #endif
   if (parser.seen('E')) planner.max_jerk[E_AXIS] = parser.value_linear_units();
 }
 
@@ -10602,9 +10641,15 @@ inline void gcode_M502() {
    * Report driver currents when no axis specified
    */
   inline void gcode_M906() {
-    uint16_t values[XYZE];
-    LOOP_XYZE(i)
-      values[i] = parser.intval(axis_codes[i]);
+    uint16_t values[NUM_AXIS];
+    LOOP_NUM_AXIS(i)
+      values[i] = parser.intval(axis_codes
+          #if ENABLED(HANGPRINTER)
+            axis_codes_hangprinter
+          #else
+            axis_codes
+          #endif
+          [i]);
 
     #if X_IS_TRINAMIC
       if (values[X_AXIS]) tmc_set_current(stepperX, extended_axis_codes[TMC_X], values[X_AXIS]);
@@ -10676,7 +10721,7 @@ inline void gcode_M502() {
    * M912: Clear TMC stepper driver overtemperature pre-warn flag held by the library
    */
   inline void gcode_M912() {
-    const bool clearX = parser.seen(axis_codes[X_AXIS]), clearY = parser.seen(axis_codes[Y_AXIS]), clearZ = parser.seen(axis_codes[Z_AXIS]), clearE = parser.seen(axis_codes[E_AXIS]),
+    const bool clearX = parser.seen(axis_codes[X_AXIS]), clearY = parser.seen(axis_codes[Y_AXIS]), clearZ = parser.seen(axis_codes[Z_AXIS]), clearE = parser.seen(axis_codes[E_CART]),
              clearAll = (!clearX && !clearY && !clearZ && !clearE) || (clearX && clearY && clearZ && clearE);
     #if ENABLED(X_IS_TMC2130) || ENABLED(IS_TRAMS) || (ENABLED(X_IS_TMC2208) && PIN_EXISTS(X_SERIAL_RX))
       if (clearX || clearAll) tmc_clear_otpw(stepperX, extended_axis_codes[TMC_X]);
@@ -11212,7 +11257,7 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bool n
                 i == 0 ? current_position[X_AXIS] : xhome,
                 current_position[Y_AXIS],
                 i == 2 ? current_position[Z_AXIS] : raised_z,
-                current_position[E_AXIS],
+                current_position[E_CART],
                 planner.max_feedrate_mm_s[i == 1 ? X_AXIS : Z_AXIS],
                 active_extruder
               );
@@ -12947,7 +12992,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
 
     // Remaining cartesian distances
     const float zdiff = destination[Z_AXIS] - current_position[Z_AXIS],
-                ediff = destination[E_AXIS] - current_position[E_AXIS];
+                ediff = destination[E_CART] - current_position[E_CART];
 
     // Get the linear distance in XYZ
     // If the move is very short, check the E move distance
@@ -13019,6 +13064,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     }
 
     #define MBL_SEGMENT_END(A) (current_position[A ##_AXIS] + (destination[A ##_AXIS] - current_position[A ##_AXIS]) * normalized_dist)
+    #define MBL_SEGMENT_END_E (current_position[E_CART] + (destination[E_CART] - current_position[E_CART]) * normalized_dist)
 
     float normalized_dist, end[XYZE];
     const int8_t gcx = max(cx1, cx2), gcy = max(cy1, cy2);
@@ -13050,7 +13096,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     }
 
     destination[Z_AXIS] = MBL_SEGMENT_END(Z);
-    destination[E_AXIS] = MBL_SEGMENT_END(E);
+    destination[E_CART] = MBL_SEGMENT_END_E;
 
     // Do the split and look for more borders
     mesh_line_to_destination(fr_mm_s, x_splits, y_splits);
@@ -13087,6 +13133,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     }
 
     #define LINE_SEGMENT_END(A) (current_position[A ##_AXIS] + (destination[A ##_AXIS] - current_position[A ##_AXIS]) * normalized_dist)
+    #define LINE_SEGMENT_END_E (current_position[E_CART] + (destination[E_CART] - current_position[E_CART]) * normalized_dist)
 
     float normalized_dist, end[XYZE];
     const int8_t gcx = max(cx1, cx2), gcy = max(cy1, cy2);
@@ -13118,7 +13165,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     }
 
     destination[Z_AXIS] = LINE_SEGMENT_END(Z);
-    destination[E_AXIS] = LINE_SEGMENT_END(E);
+    destination[E_CART] = LINE_SEGMENT_END_E;
 
     // Do the split and look for more borders
     bilinear_line_to_destination(fr_mm_s, x_splits, y_splits);
@@ -13170,10 +13217,10 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
 
     // Remaining cartesian distances
     const float
-                #if !ENABLED(HANGPRINTER)
+                #if DISABLED(HANGPRINTER)
                   zdiff = rtarget[Z_AXIS] - current_position[Z_AXIS],
                 #endif
-                ediff = rtarget[E_AXIS] - current_position[E_AXIS];
+                ediff = rtarget[E_CART] - current_position[E_CART];
 
     // Get the linear distance in XYZ
     // If the move is very short, check the E move distance
@@ -13248,12 +13295,12 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
       #if ENABLED(SCARA_FEEDRATE_SCALING)
         // For SCARA scale the feed rate from mm/s to degrees/s
         // i.e., Complete the angular vector in the given time.
-        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], raw[Z_AXIS], raw[E_AXIS], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
+        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], raw[Z_AXIS], raw[E_CART], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
         oldA = delta[A_AXIS]; oldB = delta[B_AXIS];
       #elif ENABLED(HANGPRINTER)
-        planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
+        planner.buffer_line(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], raw[E_CART], _feedrate_mm_s, active_extruder);
       #else
-        planner.buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], raw[E_AXIS], _feedrate_mm_s, active_extruder);
+        planner.buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], raw[E_CART], _feedrate_mm_s, active_extruder);
       #endif
     }
 
@@ -13261,7 +13308,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
     #if ENABLED(SCARA_FEEDRATE_SCALING)
       inverse_kinematics(rtarget);
       ADJUST_DELTA(rtarget);
-      planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], rtarget[Z_AXIS], rtarget[E_AXIS], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
+      planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], rtarget[Z_AXIS], rtarget[E_CART], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
     #else
       planner.buffer_line_kinematic(rtarget, _feedrate_mm_s, active_extruder);
     #endif
@@ -13324,7 +13371,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
         case DXC_FULL_CONTROL_MODE: break;
 
         case DXC_AUTO_PARK_MODE:
-          if (current_position[E_AXIS] == destination[E_AXIS]) {
+          if (current_position[E_CART] == destination[E_CART]) {
             // This is a travel move (with no extrusion)
             // Skip it, but keep track of the current position
             // (so it can be used as the start of the next non-travel move)
@@ -13341,7 +13388,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
               i == 0 ? raised_parked_position[X_AXIS] : current_position[X_AXIS],
               i == 0 ? raised_parked_position[Y_AXIS] : current_position[Y_AXIS],
               i == 2 ? current_position[Z_AXIS] : raised_parked_position[Z_AXIS],
-              current_position[E_AXIS],
+              current_position[E_CART],
               i == 1 ? PLANNER_XY_FEEDRATE() : planner.max_feedrate_mm_s[Z_AXIS],
               active_extruder
             );
@@ -13365,11 +13412,11 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
               inactive_extruder_x_pos,
               current_position[Y_AXIS],
               current_position[Z_AXIS],
-              current_position[E_AXIS]
+              current_position[E_CART]
             );
             planner.buffer_line(
               current_position[X_AXIS] + duplicate_extruder_x_offset,
-              current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS],
+              current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_CART],
               planner.max_feedrate_mm_s[X_AXIS], 1
             );
             SYNC_PLAN_POSITION_KINEMATIC();
@@ -13408,17 +13455,17 @@ void prepare_move_to_destination() {
   #if ENABLED(PREVENT_COLD_EXTRUSION) || ENABLED(PREVENT_LENGTHY_EXTRUDE)
 
     if (!DEBUGGING(DRYRUN)) {
-      if (destination[E_AXIS] != current_position[E_AXIS]) {
+      if (destination[E_CART] != current_position[E_CART]) {
         #if ENABLED(PREVENT_COLD_EXTRUSION)
           if (thermalManager.tooColdToExtrude(active_extruder)) {
-            current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
+            current_position[E_CART] = destination[E_CART]; // Behave as if the move really took place, but ignore E part
             SERIAL_ECHO_START();
             SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);
           }
         #endif // PREVENT_COLD_EXTRUSION
         #if ENABLED(PREVENT_LENGTHY_EXTRUDE)
-          if (FABS(destination[E_AXIS] - current_position[E_AXIS]) * planner.e_factor[active_extruder] > (EXTRUDE_MAXLENGTH)) {
-            current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
+          if (FABS(destination[E_CART] - current_position[E_CART]) * planner.e_factor[active_extruder] > (EXTRUDE_MAXLENGTH)) {
+            current_position[E_CART] = destination[E_CART]; // Behave as if the move really took place, but ignore E part
             SERIAL_ECHO_START();
             SERIAL_ECHOLNPGM(MSG_ERR_LONG_EXTRUDE_STOP);
           }
@@ -13487,7 +13534,7 @@ void prepare_move_to_destination() {
                 rt_X = cart[p_axis] - center_P,
                 rt_Y = cart[q_axis] - center_Q,
                 linear_travel = cart[l_axis] - current_position[l_axis],
-                extruder_travel = cart[E_AXIS] - current_position[E_AXIS];
+                extruder_travel = cart[E_CART] - current_position[E_CART];
 
     // CCW angle of rotation between position and target from the circle center. Only one atan2() trig computation required.
     float angular_travel = ATAN2(r_P * rt_Y - r_Q * rt_X, r_P * rt_X + r_Q * rt_Y);
@@ -13542,7 +13589,7 @@ void prepare_move_to_destination() {
     raw[l_axis] = current_position[l_axis];
 
     // Initialize the extruder axis
-    raw[E_AXIS] = current_position[E_AXIS];
+    raw[E_CART] = current_position[E_CART];
 
     const float fr_mm_s = MMS_SCALED(feedrate_mm_s);
 
@@ -13595,7 +13642,7 @@ void prepare_move_to_destination() {
       raw[p_axis] = center_P + r_P;
       raw[q_axis] = center_Q + r_Q;
       raw[l_axis] += linear_per_segment;
-      raw[E_AXIS] += extruder_per_segment;
+      raw[E_CART] += extruder_per_segment;
 
       clamp_to_software_endstops(raw);
 
@@ -13604,7 +13651,7 @@ void prepare_move_to_destination() {
         // i.e., Complete the angular vector in the given time.
         inverse_kinematics(raw);
         ADJUST_DELTA(raw);
-        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], raw[Z_AXIS], raw[E_AXIS], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
+        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], raw[Z_AXIS], raw[E_CART], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
         oldA = delta[A_AXIS]; oldB = delta[B_AXIS];
       #else
         planner.buffer_line_kinematic(raw, fr_mm_s, active_extruder);
@@ -13615,7 +13662,7 @@ void prepare_move_to_destination() {
     #if ENABLED(SCARA_FEEDRATE_SCALING)
       inverse_kinematics(cart);
       ADJUST_DELTA(cart);
-      planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], cart[Z_AXIS], cart[E_AXIS], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
+      planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], cart[Z_AXIS], cart[E_CART], HYPOT(delta[A_AXIS] - oldA, delta[B_AXIS] - oldB) * inverse_secs, active_extruder);
     #else
       planner.buffer_line_kinematic(cart, fr_mm_s, active_extruder);
     #endif
@@ -14025,23 +14072,23 @@ void disable_all_steppers() {
       #endif
       #if ENABLED(E0_IS_TMC2130)|| (ENABLED(E0_IS_TMC2208) && defined(E0_HARDWARE_SERIAL)) || ENABLED(IS_TRAMS)
         static uint8_t e0_otpw_cnt = 0;
-        e0_otpw_cnt = monitor_tmc_driver(stepperE0, axis_codes[E_AXIS], e0_otpw_cnt);
+        e0_otpw_cnt = monitor_tmc_driver(stepperE0, axis_codes[E_CART], e0_otpw_cnt);
       #endif
       #if ENABLED(E1_IS_TMC2130) || (ENABLED(E1_IS_TMC2208) && defined(E1_HARDWARE_SERIAL))
         static uint8_t e1_otpw_cnt = 0;
-        e1_otpw_cnt = monitor_tmc_driver(stepperE1, axis_codes[E_AXIS], e1_otpw_cnt);
+        e1_otpw_cnt = monitor_tmc_driver(stepperE1, axis_codes[E_CART], e1_otpw_cnt);
       #endif
       #if ENABLED(E2_IS_TMC2130) || (ENABLED(E2_IS_TMC2208) && defined(E2_HARDWARE_SERIAL))
         static uint8_t e2_otpw_cnt = 0;
-        e2_otpw_cnt = monitor_tmc_driver(stepperE2, axis_codes[E_AXIS], e2_otpw_cnt);
+        e2_otpw_cnt = monitor_tmc_driver(stepperE2, axis_codes[E_CART], e2_otpw_cnt);
       #endif
       #if ENABLED(E3_IS_TMC2130) || (ENABLED(E3_IS_TMC2208) && defined(E3_HARDWARE_SERIAL))
         static uint8_t e3_otpw_cnt = 0;
-        e3_otpw_cnt = monitor_tmc_driver(stepperE3, axis_codes[E_AXIS], e3_otpw_cnt);
+        e3_otpw_cnt = monitor_tmc_driver(stepperE3, axis_codes[E_CART], e3_otpw_cnt);
       #endif
       #if ENABLED(E4_IS_TMC2130) || (ENABLED(E4_IS_TMC2208) && defined(E4_HARDWARE_SERIAL))
         static uint8_t e4_otpw_cnt = 0;
-        e4_otpw_cnt = monitor_tmc_driver(stepperE4, axis_codes[E_AXIS], e4_otpw_cnt);
+        e4_otpw_cnt = monitor_tmc_driver(stepperE4, axis_codes[E_CART], e4_otpw_cnt);
       #endif
 
       if (report_tmc_status) SERIAL_EOL();
@@ -14182,10 +14229,10 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
 
       previous_cmd_ms = ms; // refresh_cmd_timeout()
 
-      const float olde = current_position[E_AXIS];
-      current_position[E_AXIS] += EXTRUDER_RUNOUT_EXTRUDE;
+      const float olde = current_position[E_CART];
+      current_position[E_CART] += EXTRUDER_RUNOUT_EXTRUDE;
       planner.buffer_line_kinematic(current_position, MMM_TO_MMS(EXTRUDER_RUNOUT_SPEED), active_extruder);
-      current_position[E_AXIS] = olde;
+      current_position[E_CART] = olde;
       planner.set_e_position_mm(olde);
       stepper.synchronize();
       #if ENABLED(SWITCHING_EXTRUDER)

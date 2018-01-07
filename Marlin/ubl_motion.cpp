@@ -46,8 +46,8 @@
        */
       #if ENABLED(SKEW_CORRECTION)
         // For skew correction just adjust the destination point and we're done
-        float start[XYZE] = { current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS] },
-              end[XYZE] = { destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS] };
+        float start[XYZE] = { current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_CART] },
+              end[XYZE] = { destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_CART] };
         planner.skew(start[X_AXIS], start[Y_AXIS], start[Z_AXIS]);
         planner.skew(end[X_AXIS], end[Y_AXIS], end[Z_AXIS]);
       #else
@@ -64,7 +64,7 @@
         SERIAL_ECHOPAIR(" ubl.line_to_destination_cartesian(xe=", destination[X_AXIS]);
         SERIAL_ECHOPAIR(", ye=", destination[Y_AXIS]);
         SERIAL_ECHOPAIR(", ze=", destination[Z_AXIS]);
-        SERIAL_ECHOPAIR(", ee=", destination[E_AXIS]);
+        SERIAL_ECHOPAIR(", ee=", destination[E_CART]);
         SERIAL_CHAR(')');
         SERIAL_EOL();
         debug_current_and_destination(PSTR("Start of ubl.line_to_destination_cartesian()"));
@@ -83,7 +83,7 @@
           // Note: There is no Z Correction in this case. We are off the grid and don't know what
           // a reasonable correction would be.
 
-          planner.buffer_segment(end[X_AXIS], end[Y_AXIS], end[Z_AXIS], end[E_AXIS], feed_rate, extruder);
+          planner.buffer_segment(end[X_AXIS], end[Y_AXIS], end[Z_AXIS], end[E_CART], feed_rate, extruder);
           set_current_from_destination();
 
           if (g26_debug_flag)
@@ -127,7 +127,7 @@
          */
         if (isnan(z0)) z0 = 0.0;
 
-        planner.buffer_segment(end[X_AXIS], end[Y_AXIS], end[Z_AXIS] + z0, end[E_AXIS], feed_rate, extruder);
+        planner.buffer_segment(end[X_AXIS], end[Y_AXIS], end[Z_AXIS] + z0, end[E_CART], feed_rate, extruder);
 
         if (g26_debug_flag)
           debug_current_and_destination(PSTR("FINAL_MOVE in ubl.line_to_destination_cartesian()"));
@@ -168,7 +168,7 @@
       const bool use_x_dist = adx > ady;
 
       float on_axis_distance = use_x_dist ? dx : dy,
-            e_position = end[E_AXIS] - start[E_AXIS],
+            e_position = end[E_CART] - start[E_CART],
             z_position = end[Z_AXIS] - start[Z_AXIS];
 
       const float e_normalized_dist = e_position / on_axis_distance,
@@ -223,11 +223,11 @@
           if (ry != start[Y_AXIS]) {
             if (!inf_normalized_flag) {
               on_axis_distance = use_x_dist ? rx - start[X_AXIS] : ry - start[Y_AXIS];
-              e_position = start[E_AXIS] + on_axis_distance * e_normalized_dist;
+              e_position = start[E_CART] + on_axis_distance * e_normalized_dist;
               z_position = start[Z_AXIS] + on_axis_distance * z_normalized_dist;
             }
             else {
-              e_position = end[E_AXIS];
+              e_position = end[E_CART];
               z_position = end[Z_AXIS];
             }
 
@@ -287,11 +287,11 @@
           if (rx != start[X_AXIS]) {
             if (!inf_normalized_flag) {
               on_axis_distance = use_x_dist ? rx - start[X_AXIS] : ry - start[Y_AXIS];
-              e_position = start[E_AXIS] + on_axis_distance * e_normalized_dist;  // is based on X or Y because this is a horizontal move
+              e_position = start[E_CART] + on_axis_distance * e_normalized_dist;  // is based on X or Y because this is a horizontal move
               z_position = start[Z_AXIS] + on_axis_distance * z_normalized_dist;
             }
             else {
-              e_position = end[E_AXIS];
+              e_position = end[E_CART];
               z_position = end[Z_AXIS];
             }
 
@@ -350,11 +350,11 @@
 
           if (!inf_normalized_flag) {
             on_axis_distance = use_x_dist ? rx - start[X_AXIS] : next_mesh_line_y - start[Y_AXIS];
-            e_position = start[E_AXIS] + on_axis_distance * e_normalized_dist;
+            e_position = start[E_CART] + on_axis_distance * e_normalized_dist;
             z_position = start[Z_AXIS] + on_axis_distance * z_normalized_dist;
           }
           else {
-            e_position = end[E_AXIS];
+            e_position = end[E_CART];
             z_position = end[Z_AXIS];
           }
           planner.buffer_segment(rx, next_mesh_line_y, z_position + z0, e_position, feed_rate, extruder);
@@ -377,11 +377,11 @@
 
           if (!inf_normalized_flag) {
             on_axis_distance = use_x_dist ? next_mesh_line_x - start[X_AXIS] : ry - start[Y_AXIS];
-            e_position = start[E_AXIS] + on_axis_distance * e_normalized_dist;
+            e_position = start[E_CART] + on_axis_distance * e_normalized_dist;
             z_position = start[Z_AXIS] + on_axis_distance * z_normalized_dist;
           }
           else {
-            e_position = end[E_AXIS];
+            e_position = end[E_CART];
             z_position = end[Z_AXIS];
           }
 
@@ -414,7 +414,7 @@
     inline void _O2 ubl_buffer_segment_raw(const float (&in_raw)[XYZE], const float &fr) {
 
       #if ENABLED(SKEW_CORRECTION)
-        float raw[XYZE] = { in_raw[X_AXIS], in_raw[Y_AXIS], in_raw[Z_AXIS], in_raw[E_AXIS] };
+        float raw[XYZE] = { in_raw[X_AXIS], in_raw[Y_AXIS], in_raw[Z_AXIS], in_raw[E_CART] };
         planner.skew(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS]);
       #else
         const float (&raw)[XYZE] = in_raw;
@@ -423,7 +423,12 @@
       #if ENABLED(DELTA)  // apply delta inverse_kinematics
 
         DELTA_IK(raw);
-        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], in_raw[E_AXIS], fr, active_extruder);
+        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], in_raw[E_CART], fr, active_extruder);
+
+      #elif ENABLED(HANGPRINTER)   // apply hangprinter inverse_kinematics
+
+        HANGPRINTER_IK(raw);
+        planner.buffer_segment(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], in_raw[E_CART], fr, active_extruder);
 
       #elif IS_SCARA  // apply scara inverse_kinematics (should be changed to save raw->logical->raw)
 
@@ -436,11 +441,11 @@
         scara_oldB = delta[B_AXIS];
         float s_feedrate = max(adiff, bdiff) * scara_feed_factor;
 
-        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], in_raw[E_AXIS], s_feedrate, active_extruder);
+        planner.buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], in_raw[E_CART], s_feedrate, active_extruder);
 
       #else // CARTESIAN
 
-        planner.buffer_segment(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS], in_raw[E_AXIS], fr, active_extruder);
+        planner.buffer_segment(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS], in_raw[E_CART], fr, active_extruder);
 
       #endif
     }
@@ -472,7 +477,7 @@
         rtarget[X_AXIS] - current_position[X_AXIS],
         rtarget[Y_AXIS] - current_position[Y_AXIS],
         rtarget[Z_AXIS] - current_position[Z_AXIS],
-        rtarget[E_AXIS] - current_position[E_AXIS]
+        rtarget[E_CART] - current_position[E_CART]
       };
 
       const float cartesian_xy_mm = HYPOT(total[X_AXIS], total[Y_AXIS]);  // total horizontal xy distance
@@ -499,7 +504,7 @@
         total[X_AXIS] * inv_segments,
         total[Y_AXIS] * inv_segments,
         total[Z_AXIS] * inv_segments,
-        total[E_AXIS] * inv_segments
+        total[E_CART] * inv_segments
       };
 
       // Note that E segment distance could vary slightly as z mesh height
@@ -509,7 +514,7 @@
         current_position[X_AXIS],
         current_position[Y_AXIS],
         current_position[Z_AXIS],
-        current_position[E_AXIS]
+        current_position[E_CART]
       };
 
       // Only compute leveling per segment if ubl active and target below z_fade_height.

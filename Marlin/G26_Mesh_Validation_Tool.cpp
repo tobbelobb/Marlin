@@ -136,7 +136,7 @@
   #if ENABLED(ULTRA_LCD)
     extern char lcd_status_message[];
   #endif
-  inline void sync_plan_position_e() { planner.set_e_position_mm(current_position[E_AXIS]); }
+  inline void sync_plan_position_e() { planner.set_e_position_mm(current_position[E_CART]); }
 
   // Private functions
 
@@ -201,7 +201,7 @@
       destination[X_AXIS] = current_position[X_AXIS];
       destination[Y_AXIS] = current_position[Y_AXIS];
       destination[Z_AXIS] = z;                          // We know the last_z==z or we wouldn't be in this block of code.
-      destination[E_AXIS] = current_position[E_AXIS];
+      destination[E_CART] = current_position[E_CART];
 
       G26_line_to_destination(feed_value);
 
@@ -217,7 +217,7 @@
 
     destination[X_AXIS] = rx;
     destination[Y_AXIS] = ry;
-    destination[E_AXIS] += e_delta;
+    destination[E_CART] += e_delta;
 
     G26_line_to_destination(feed_value);
 
@@ -261,7 +261,7 @@
 
         while (!is_lcd_clicked()) {
           lcd_chirp();
-          destination[E_AXIS] += 0.25;
+          destination[E_CART] += 0.25;
           #ifdef PREVENT_LENGTHY_EXTRUDE
             Total_Prime += 0.25;
             if (Total_Prime >= EXTRUDE_MAXLENGTH) return G26_ERR;
@@ -292,7 +292,7 @@
         lcd_quick_feedback();
       #endif
       set_destination_from_current();
-      destination[E_AXIS] += g26_prime_length;
+      destination[E_CART] += g26_prime_length;
       G26_line_to_destination(planner.max_feedrate_mm_s[E_AXIS] / 15.0);
       stepper.synchronize();
       set_destination_from_current();
@@ -689,7 +689,7 @@
 
     if (turn_on_heaters() != G26_OK) goto LEAVE;
 
-    current_position[E_AXIS] = 0.0;
+    current_position[E_CART] = 0.0;
     sync_plan_position_e();
 
     if (g26_prime_flag && prime_nozzle() != G26_OK) goto LEAVE;

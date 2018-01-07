@@ -1,27 +1,27 @@
 TODO: ------------------------------------------------
 Prepare Marlin_main.cpp
         stepper.cpp
-Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS as indices for all Hangprinter geometry arrays (still X_AXIS, Y_AXIS, Z_AXIS, E_AXIS for Carthesian geometry arrays)
-  And add ABCDE and ABCDE_N wherever there was XYZE and XYZE_N before
-
-  - stepper.cpp
-  - Marlin_main.cpp
+Add A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS as indices for all Hangprinter geometry arrays (X_AXIS, Y_AXIS, Z_AXIS, E_CART for Carthesian geometry arrays)
+  And add NUM_AXIS and NUM_AXIS_N wherever there was XYZE and XYZE_N before
 
 Map ABC D E axes to XYZ E1 E0
 
 Change gcodes that look for axis_codes (= { 'X', 'Y', 'Z', 'E' }) so that they look for axis_codes_hangprinter (= { 'A', 'B', 'C', 'D', 'E' }) instead
-  - M201
   - M204
-  - M92
+  - M665
+  - M913
+  - M350?
+  - M351?
 
 Include forward kinematics
   Use trilateration: https://en.wikipedia.org/wiki/Trilateration (Try all 4 combinations and average the result)
+  affects get_cartesian_from_steppers()
 
 Make G6 and G1 S2 step individual motors
 
 Make G28 do nothing but zero out counters
 
-Implement M665 QWERTYUIOP in Marlin_main.cpp
+Implement M665 WERTYUIOP in Marlin_main.cpp
 
 Reorganize configuration_store so that MarlinSettings::load() and MarlinSettings::save() works
   - Make space for ABCDE arrays instead of XYZE arrays
@@ -33,6 +33,8 @@ Include line buildup compensation
 
 Include Mechaduino i2c code
 
+Move TMC config from HangprinterMarlin/stepper.cpp into example_configurations/hangprinter/Configuration_adv.h TMC_ADV(){ }
+
 
 DONE:-------------------------------------------------
 Add HANGPRINTER define
@@ -42,6 +44,13 @@ Include inverse kinematics
 Prepare planner.h
         planner.cpp
         stepper.h
+        stepper.cpp
+        Marlin_main.cpp
+M92
+M201
+M203
+M205
+M906
 
 
 GENERAL STRATEGY:-------------------------------------
@@ -97,6 +106,13 @@ Why 3?
         motor_current_setting[driver] = current; // update motor_current_setting
   The dependency is also hard coded into configuration_store.cpp
 
+Why is there something called "manual" feedrate, "manual" move axis, "manual" move e index?
+  Because people use their LCD+knob control to do moves (in carthesian system)
+  Would of course be nice with manual ABCD-moves as well...
+
+Does parser.value_axis_units(E_AXIS) really mean to say E_CART?
+  Seems like it only makes a difference in inch mode
+
 OBSERVE: ---------------------------------------------
 Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
 This affects ABCDE arrays
@@ -119,6 +135,7 @@ This affects ABCDE arrays
   - position_float[] (planner.cpp)
   - count_position[] (stepper.cpp)
   - count_direction[] (stepper.cpp)
+  - axis_codes_hangprinter[]
 And ABCDE functions/methods
   - _buffer_steps (planner.cpp)
   - buffer_segment (planner.cpp)
@@ -142,15 +159,68 @@ And #defines
 And macros
   - PULSE_START(AXIS)
   - PULSE_STOP(AXIS)
+  - LINE_SEGMENT_END(A)
+  - MBL_SEGMENT_END(A)
+  - _BETWEEN(A)
+  - CELL_INDEX(A,V)
+  - HOMEAXIS(LETTER)
+  - DUAL_ENDSTOP_APPLY_STEP(AXIS,v)
+  - SET_STEP_DIR(AXIS)
 
   Hangprinter mapping pins to axes:
   {X, Y, Z, E1, E0} <-> {A, B, C, D, E}
   Note that D axis uses the E1 pin
 
-The following arrays are XYZE arrays
+The following arrays are XYZE arrays (All in Marlin_main.cpp)
   - current_position[]
-  - cart
-  - raw
+  - destination[]
+  - cart (in Marlin_main.cpp plan_arc())
+  - raw[XYZE] (prepare_kinematic_move_to(), plan_arc())
+  - axis_codes[XYZE]
+  - raised_parked_position[XYZE]
+  - resume_position[XYZE]
+  - from_steppers[XYZE]
+  - diff[XYZE]
+  - values[XYZE] (Should maybe be changed to NUM_AXIS to make M350/M351 work with ABCDE)
+  - (&rtarget)[XYZE] (Marlin_main.cpp prepare_kinematic_move_to())
+  - segment_distance[XYZE]
+  - start[XYZE] (ubl_motion.cpp)
+  - end[XYZE] (ubl_motion.cpp)
+  - axis_relative_modes[]
+
+The following arrays are XYZ arrays
+  - axis_homed[]
+  - axis_known_position[]
+  - position_shift[XYZ]
+  - home_offset[XYZ]
+  - workspace_offset[XYZ]
+  - soft_endstop_min[XYZ]
+  - soft_endstop_max[XYZ]
+  - hotend_offset[XYZ][HOTENDS]
+  - cartes[XYZ]
+  - base_min_pos
+  - base_max_pos
+  - base_home_pos
+  - max_length
+  - home_bump_mm
+  - home_dir
+  - raw[XYZ] (Marlin_main.cpp in do_blocking_move_to(), bilinear_z_offset(), inverse_kinematics())
+  - reset[XYZ]
+  - old_offset[XYZ]
+  - new_offset[XYZ]
+  - diff[XYZ]
+  - converted[XYZ]
+  - delta_endstop_adj[]
+  - delta_tower_angle_trim[]
+  - e_delta[]
+  - retract_mm[XYZ]
+  - position_shift[]
+  - logical[XYZ]
+  - leveled[XYZ]
+  - unleveled[XYZ]
+  - Stepper::motor_current_setting[3]
+  - target[XYZ] (Marlin_main.cpp clamp_to_software_endstops())
+
 
 TODO LATER: ------------------------------------------
 delta_segments_per_second -> kinematic_segments_per_second
@@ -172,9 +242,13 @@ The way that lin_dist_xy is calculated in stepper.cpp seems to assume a cartesia
 
 Everything involving endstops
 Everything involving automatic homing
+  ABCD_HOME_BUMP_MM
+  Look at home_delta() in Marlin_main.cpp
 
 Always use Stepper::e_steps[E_STEPPERS] instead of counter_E.
   Right now it only uses e_steps if LIN_ADVANCE is enabled
   Separating movement axes from tool head axes is in general a good thing.
 
 Support E1_DUAL_STEPPER_DRIVERS
+
+axis_unit_factor references E_AXIS but I have no idea if it really means E_CART or E_AXIS

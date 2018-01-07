@@ -1169,4 +1169,17 @@
     #endif
   #endif
 
+  /**
+   * MOV_AXIS: number of independent axes driving the tool head's translational movement
+   * NUM_AXIS: number of movement axes + 1
+   * NUM_AXIS_N: number of movement axes + number of extruders (defined elsewhere)
+   */
+  #if ENABLED(HANGPRINTER)
+    #define MOV_AXIS 4
+    #define NUM_AXIS 5
+  #else
+    #define MOV_AXIS 3
+    #define NUM_AXIS 4
+  #endif
+
 #endif // CONDITIONALS_POST_H

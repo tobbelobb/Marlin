@@ -34,39 +34,30 @@
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-#if ENABLED(HANGPRINTER) // Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
-  enum AxisEnum {
-    NO_AXIS   = -1,
-    X_AXIS    = 0,
-    A_AXIS    = 0,
-    Y_AXIS    = 1,
-    B_AXIS    = 1,
-    Z_AXIS    = 2,
-    C_AXIS    = 2,
-    E_AXIS    = 3,
+enum AxisEnum {
+  NO_AXIS   = -1,
+  X_AXIS    = 0,
+  A_AXIS    = 0,
+  Y_AXIS    = 1,
+  B_AXIS    = 1,
+  Z_AXIS    = 2,
+  C_AXIS    = 2,
+  E_CART    = 3,
+ // Hangprinter order: A_AXIS, B_AXIS, C_AXIS, D_AXIS, E_AXIS
+#if ENABLED(HANGPRINTER)
     D_AXIS    = 3,
-    EHP_AXIS  = 4,
+    E_AXIS    = 4,
     X_HEAD    = 5,
     Y_HEAD    = 6,
     Z_HEAD    = 7,
-    ALL_AXES  = 100
-  };
 #else
-  enum AxisEnum {
-    NO_AXIS   = -1,
-    X_AXIS    = 0,
-    A_AXIS    = 0,
-    Y_AXIS    = 1,
-    B_AXIS    = 1,
-    Z_AXIS    = 2,
-    C_AXIS    = 2,
     E_AXIS    = 3,
     X_HEAD    = 4,
     Y_HEAD    = 5,
     Z_HEAD    = 6,
-    ALL_AXES  = 100
-  };
 #endif
+  ALL_AXES  = 100
+};
 
 #define LOOP_S_LE_N(VAR, S, N) for (uint8_t VAR=S; VAR<=N; VAR++)
 #define LOOP_S_L_N(VAR, S, N) for (uint8_t VAR=S; VAR<N; VAR++)

@@ -388,13 +388,13 @@ void Stepper::set_directions() {
   #endif
 
   #if DISABLED(LIN_ADVANCE)
-    if (motor_direction(E_AXIS_)) {
+    if (motor_direction(E_AXIS)) {
       REV_E_DIR();
-      count_direction[E_AXIS_] = -1;
+      count_direction[E_AXIS] = -1;
     }
     else {
       NORM_E_DIR();
-      count_direction[E_AXIS_] = 1;
+      count_direction[E_AXIS] = 1;
     }
   #endif // !LIN_ADVANCE
 }
@@ -551,21 +551,21 @@ void Stepper::isr() {
   for (uint8_t i = step_loops; i--;) {
     #if ENABLED(LIN_ADVANCE)
 
-      counter_E += current_block->steps[E_AXIS_];
+      counter_E += current_block->steps[E_AXIS];
       if (counter_E > 0) {
         counter_E -= current_block->step_event_count;
         #if DISABLED(MIXING_EXTRUDER)
           // Don't step E here for mixing extruder
-          count_position[E_AXIS_] += count_direction[E_AXIS_];
-          motor_direction(E_AXIS_) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
+          count_position[E_AXIS] += count_direction[E_AXIS];
+          motor_direction(E_AXIS) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
         #endif
       }
 
       #if ENABLED(MIXING_EXTRUDER)
         // Step mixing steppers proportionally
-        const bool dir = motor_direction(E_AXIS_);
+        const bool dir = motor_direction(E_AXIS);
         MIXING_STEPPERS_LOOP(j) {
-          counter_m[j] += current_block->steps[E_AXIS_];
+          counter_m[j] += current_block->steps[E_AXIS];
           if (counter_m[j] > 0) {
             counter_m[j] -= current_block->mix_event_count[j];
             dir ? --e_steps[j] : ++e_steps[j];
@@ -589,19 +589,6 @@ void Stepper::isr() {
       if (_COUNTER(AXIS) > 0) { \
         _COUNTER(AXIS) -= current_block->step_event_count; \
         count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
-        _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
-      }
-
-    // PULSE_START/STOP(E) won't work with Hangprinter since E_AXIS = D_AXIS = 3
-    // The following will work because E_AXIS_ is correct for both Hangprinter and others
-    #define PULSE_START_E \
-      counter_E += current_block->steps[E_AXIS_]; \
-      if (counter_E > 0) { _APPLY_STEP(AXIS)(!_INVERT_STEP_PIN(AXIS),0); }
-
-    #define PULSE_STOP_E \
-      if (counter_E > 0) { \
-        counter_E -= current_block->step_event_count; \
-        count_position[E_AXIS_] += count_direction[E_AXIS_]; \
         _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
       }
 
@@ -724,16 +711,16 @@ void Stepper::isr() {
     #if DISABLED(LIN_ADVANCE)
       #if ENABLED(MIXING_EXTRUDER)
         // Keep updating the single E axis
-        counter_E += current_block->steps[E_AXIS_];
+        counter_E += current_block->steps[E_AXIS];
         // Tick the counters used for this mix
         MIXING_STEPPERS_LOOP(j) {
           // Step mixing steppers (proportionally)
-          counter_m[j] += current_block->steps[E_AXIS_];
+          counter_m[j] += current_block->steps[E_AXIS];
           // Step when the counter goes over zero
           if (counter_m[j] > 0) En_STEP_WRITE(j, !INVERT_E_STEP_PIN);
         }
       #else // !MIXING_EXTRUDER
-        PULSE_START_E;
+        PULSE_START(E);
       #endif
     #endif // !LIN_ADVANCE
 
@@ -775,7 +762,7 @@ void Stepper::isr() {
         // Always step the single E axis
         if (counter_E > 0) {
           counter_E -= current_block->step_event_count;
-          count_position[E_AXIS_] += count_direction[E_AXIS_];
+          count_position[E_AXIS] += count_direction[E_AXIS];
         }
         MIXING_STEPPERS_LOOP(j) {
           if (counter_m[j] > 0) {
@@ -784,7 +771,7 @@ void Stepper::isr() {
           }
         }
       #else // !MIXING_EXTRUDER
-        PULSE_STOP_E;
+        PULSE_STOP(E);
       #endif
     #endif // !LIN_ADVANCE
 
@@ -1308,7 +1295,7 @@ void Stepper::set_position(const long &a, const long &b, const long &c,
     count_position[Z_AXIS] = c;
   #endif
 
-  count_position[E_AXIS_] = e;
+  count_position[E_AXIS] = e;
   CRITICAL_SECTION_END;
 }
 
@@ -1320,7 +1307,7 @@ void Stepper::set_position(const AxisEnum &axis, const long &v) {
 
 void Stepper::set_e_position(const long &e) {
   CRITICAL_SECTION_START;
-  count_position[E_AXIS_] = e;
+  count_position[E_AXIS] = e;
   CRITICAL_SECTION_END;
 }
 

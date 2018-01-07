@@ -372,6 +372,12 @@
 #define INVERT_X_STEP_PIN false
 #define INVERT_Y_STEP_PIN false
 #define INVERT_Z_STEP_PIN false
+#if ENABLED(HANGPRINTER)
+  #define INVERT_A_STEP_PIN false
+  #define INVERT_B_STEP_PIN false
+  #define INVERT_C_STEP_PIN false
+  #define INVERT_D_STEP_PIN false
+#endif
 #define INVERT_E_STEP_PIN false
 
 // Default stepper release if idle. Set to 0 to deactivate.
@@ -437,6 +443,8 @@
  *    M907 - applies to all.
  *    M908 - BQ_ZUM_MEGA_3D, RAMBO, PRINTRBOARD_REVF, RIGIDBOARD_V2 & SCOOVO_X9H
  *    M909, M910 & LCD - only PRINTRBOARD_REVF & RIGIDBOARD_V2
+ *
+ *  Hangprinter note: the below arrays might need another element to match ABCD/ABCDE
  */
 //#define PWM_MOTOR_CURRENT { 1300, 1300, 1250 }          // Values in milliamps
 //#define DIGIPOT_MOTOR_CURRENT { 135,135,135,135,135 }   // Values 0-255 (RAMBO 135 = ~0.75A, 185 = ~1A)

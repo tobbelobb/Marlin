@@ -129,15 +129,6 @@ typedef struct {
 
 #define BLOCK_MOD(n) ((n)&(BLOCK_BUFFER_SIZE-1))
 
-// E_AXIS_ makes space for extra movement axis
-#if ENABLED(HANGPRINTER)
-  #define E_AXIS_ EHP_AXIS
-  #define E_AXIS_N_ EHP_AXIS_N
-#else
-  #define E_AXIS_ E_AXIS
-  #define E_AXIS_N_ E_AXIS_N
-#endif
-
 class Planner {
   public:
 
@@ -501,12 +492,12 @@ class Planner {
       #if IS_KINEMATIC
         inverse_kinematics(raw);
         #if ENABLED(HANGPRINTER)
-          buffer_segment(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], cart[E_AXIS], fr_mm_s, extruder);
+          buffer_segment(line_lengths[A_AXIS], line_lengths[B_AXIS], line_lengths[C_AXIS], line_lengths[D_AXIS], cart[E_CART], fr_mm_s, extruder);
         #else
-          buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], cart[E_AXIS], fr_mm_s, extruder);
+          buffer_segment(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], cart[E_CART], fr_mm_s, extruder);
         #endif
       #else
-        buffer_segment(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS], cart[E_AXIS], fr_mm_s, extruder);
+        buffer_segment(raw[X_AXIS], raw[Y_AXIS], raw[Z_AXIS], cart[E_CART], fr_mm_s, extruder);
       #endif
     }
 
@@ -536,7 +527,7 @@ class Planner {
     static void set_position_mm_kinematic(const float (&cart)[XYZE]);
     static void set_position_mm(const AxisEnum axis, const float &v);
     FORCE_INLINE static void set_z_position_mm(const float &z) { set_position_mm(Z_AXIS, z); }
-    FORCE_INLINE static void set_e_position_mm(const float &e) { set_position_mm(AxisEnum(E_AXIS_), e); }
+    FORCE_INLINE static void set_e_position_mm(const float &e) { set_position_mm(AxisEnum(E_AXIS), e); }
 
     /**
      * Sync from the stepper positions. (e.g., after an interrupted move)

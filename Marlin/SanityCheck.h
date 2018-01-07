@@ -376,6 +376,8 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
 #if ENABLED(BABYSTEPPING)
   #if ENABLED(SCARA)
     #error "BABYSTEPPING is not implemented for SCARA yet."
+  #elif ENABLED(HANGPRINTER)
+    #error "BABYSTEPPING is not implemented for HANGPRINTER."
   #elif ENABLED(DELTA) && ENABLED(BABYSTEP_XY)
     #error "BABYSTEPPING only implemented for Z axis on deltabots."
   #elif ENABLED(BABYSTEP_ZPROBE_OFFSET) && ENABLED(MESH_BED_LEVELING)
@@ -424,6 +426,9 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
  */
 #if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU) && ENABLED(DELTA)
   #error "INDIVIDUAL_AXIS_HOMING_MENU is incompatible with DELTA kinematics."
+#endif
+#if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU) && ENABLED(HANGPRINTER)
+  #error "INDIVIDUAL_AXIS_HOMING_MENU is incompatible with HANGPRINTER kinematics."
 #endif
 
 /**
@@ -577,6 +582,9 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
  * Allow only one kinematic type to be defined
  */
 static_assert(1 >= 0
+  #if ENABLED(HANGPRINTER)
+    +1
+  #endif
   #if ENABLED(DELTA)
     + 1
   #endif
@@ -604,7 +612,7 @@ static_assert(1 >= 0
   #if ENABLED(COREZY)
     + 1
   #endif
-  , "Please enable only one of DELTA, MORGAN_SCARA, MAKERARM_SCARA, COREXY, COREYX, COREXZ, COREZX, COREYZ, or COREZY."
+  , "Please enable only one of HANGPRINTER, DELTA, MORGAN_SCARA, MAKERARM_SCARA, COREXY, COREYX, COREXZ, COREZX, COREYZ, or COREZY."
 );
 
 /**
@@ -627,6 +635,12 @@ static_assert(1 >= 0
     #endif
   #endif
 #endif
+
+/**
+ * Hangprinter requirements
+ * TODO: Do some basic Hangprinter sanity checking here.
+ */
+
 
 /**
  * Probes
@@ -1518,20 +1532,17 @@ constexpr float sanity_arr_1[] = DEFAULT_AXIS_STEPS_PER_UNIT,
                 sanity_arr_2[] = DEFAULT_MAX_FEEDRATE,
                 sanity_arr_3[] = DEFAULT_MAX_ACCELERATION;
 #if ENABLED(HANGPRINTER)
-  static_assert(COUNT(sanity_arr_1) >= ABCDE, "DEFAULT_AXIS_STEPS_PER_UNIT requires 5 (or more) elements.");
-  static_assert(COUNT(sanity_arr_2) >= ABCDE, "DEFAULT_MAX_FEEDRATE requires 5 (or more) elements.");
-  static_assert(COUNT(sanity_arr_3) >= ABCDE, "DEFAULT_MAX_ACCELERATION requires 5 (or more) elements.");
-  static_assert(COUNT(sanity_arr_1) <= ABCDE_N, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements.");
-  static_assert(COUNT(sanity_arr_2) <= ABCDE_N, "DEFAULT_MAX_FEEDRATE has too many elements.");
-  static_assert(COUNT(sanity_arr_3) <= ABCDE_N, "DEFAULT_MAX_ACCELERATION has too many elements.");
+  static_assert(COUNT(sanity_arr_1) >= NUM_AXIS, "DEFAULT_AXIS_STEPS_PER_UNIT requires 5 (or more) elements.");
+  static_assert(COUNT(sanity_arr_2) >= NUM_AXIS, "DEFAULT_MAX_FEEDRATE requires 5 (or more) elements.");
+  static_assert(COUNT(sanity_arr_3) >= NUM_AXIS, "DEFAULT_MAX_ACCELERATION requires 5 (or more) elements.");
 #else
-  static_assert(COUNT(sanity_arr_1) >= XYZE, "DEFAULT_AXIS_STEPS_PER_UNIT requires 4 (or more) elements.");
-  static_assert(COUNT(sanity_arr_2) >= XYZE, "DEFAULT_MAX_FEEDRATE requires 4 (or more) elements.");
-  static_assert(COUNT(sanity_arr_3) >= XYZE, "DEFAULT_MAX_ACCELERATION requires 4 (or more) elements.");
-  static_assert(COUNT(sanity_arr_1) <= XYZE_N, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements.");
-  static_assert(COUNT(sanity_arr_2) <= XYZE_N, "DEFAULT_MAX_FEEDRATE has too many elements.");
-  static_assert(COUNT(sanity_arr_3) <= XYZE_N, "DEFAULT_MAX_ACCELERATION has too many elements.");
+  static_assert(COUNT(sanity_arr_1) >= NUM_AXIS, "DEFAULT_AXIS_STEPS_PER_UNIT requires 4 (or more) elements.");
+  static_assert(COUNT(sanity_arr_2) >= NUM_AXIS, "DEFAULT_MAX_FEEDRATE requires 4 (or more) elements.");
+  static_assert(COUNT(sanity_arr_3) >= NUM_AXIS, "DEFAULT_MAX_ACCELERATION requires 4 (or more) elements.");
 #endif
+static_assert(COUNT(sanity_arr_1) <= NUM_AXIS_N, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements.");
+static_assert(COUNT(sanity_arr_2) <= NUM_AXIS_N, "DEFAULT_MAX_FEEDRATE has too many elements.");
+static_assert(COUNT(sanity_arr_3) <= NUM_AXIS_N, "DEFAULT_MAX_ACCELERATION has too many elements.");
 
 /**
  * Sanity checks for Spindle / Laser
