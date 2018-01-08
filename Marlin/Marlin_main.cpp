@@ -51,6 +51,7 @@
  * G3   - CCW ARC
  * G4   - Dwell S<seconds> or P<milliseconds>
  * G5   - Cubic B-spline with XYZE destination and IJPQ offsets
+ * G6   - Direct stepper move (Requires G6). Hangprinter defaults to relative moves. Others default to absolute moves.
  * G10  - Retract filament according to settings of M207 (Requires FWRETRACT)
  * G11  - Retract recover filament according to settings of M208 (Requires FWRETRACT)
  * G12  - Clean tool (Requires NOZZLE_CLEAN_FEATURE)
@@ -1545,9 +1546,11 @@ inline float get_homing_bump_feedrate(const AxisEnum axis) {
 /**
  * Move the planner to the current position from wherever it last moved
  * (or from wherever it has been told it is located).
+ *
+ * Impossible on Hangprinter because current_position and position are of different sizes
  */
 inline void buffer_line_to_current_position() {
-  #if DISABLED(HANGPRINTER) // this probably breaks do_blocking_move_to()
+  #if DISABLED(HANGPRINTER) // emptying this function probably breaks do_blocking_move_to()
     planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_CART], feedrate_mm_s, active_extruder);
   #endif
 }
@@ -3567,6 +3570,68 @@ inline void gcode_G4() {
   }
 
 #endif // BEZIER_CURVE_SUPPORT
+
+#if ENABLED(G6)
+
+  /**
+   * G6 implementation for Hangprinter based on
+   * http://reprap.org/wiki/GCodes#G6:_Direct_Stepper_Move
+   * Accessed Jan 8, 2018
+   *
+   * G6 is used frequently to tighten lines with Hangprinter, so Hangprinter default is relative moves.
+   * Hangprinter uses parameter S for absolute moves.
+   */
+
+  /**
+   * G6: Direct Stepper Move
+   */
+  inline void gcode_G6() {
+    #if ENABLED(NO_MOTION_BEFORE_HOMING)
+      if (axis_unhomed_error()) return;
+    #endif
+    if (IsRunning()) {
+      float go[MOV_AXIS] = { 0.0 },
+            tmp_fr_mm_s = 0.0;
+
+      LOOP_MOV_AXIS(i)
+        if(parser.seen(
+                       #if ENABLED(HANGPRINTER)
+                         axis_codes_hangprinter
+                       #else
+                         axis_codes
+                       #endif
+                      [i]))
+          go[i] = parser.value_axis_units((AxisEnum)i);
+      if(
+         #if ENABLED(HANGPRINTER) // Sending R to another machine is the same as not sending S to Hangprinter
+           !parser.seen('S')
+         #else
+           parser.seen('R')
+         #endif
+        )
+        LOOP_MOV_AXIS(i)
+          go[i] +=
+            #if ENABLED(HANGPRINTER)
+              line_lengths
+            #elif ENABLED(DELTA)
+              delta
+            #else
+              current_position
+            #endif
+            [i];
+      if (parser.linearval('F') > 0.0)
+        tmp_fr_mm_s = MMM_TO_MMS(parser.value_feedrate());
+      else
+        tmp_fr_mm_s = feedrate_mm_s;
+        planner.buffer_segment(go[A_AXIS], go[B_AXIS], go[C_AXIS],
+                               #if ENABLED(HANGPRINTER)
+                                 go[D_AXIS],
+                               #endif
+                               current_position[E_CART], tmp_fr_mm_s, active_extruder, false);
+    }
+  }
+#endif
+
 
 #if ENABLED(FWRETRACT)
 
@@ -11690,6 +11755,12 @@ void process_parsed_command() {
           gcode_G5();
           break;
       #endif // BEZIER_CURVE_SUPPORT
+
+      #if ENABLED(G6)
+        case 6: // G6: Direct stepper move
+          gcode_G6();
+          break;
+      #endif
 
       #if ENABLED(FWRETRACT)
         case 10: // G10: retract

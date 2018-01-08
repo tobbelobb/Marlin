@@ -79,6 +79,9 @@ enum BlockFlag {
 typedef struct {
 
   uint8_t flag;                             // Block flags (See BlockFlag enum above)
+  #if ENABLED(G6)
+    bool count_it;
+  #endif
 
   unsigned char active_extruder;            // The extruder to move (if E move)
 
@@ -192,7 +195,7 @@ class Planner {
 
     #if ENABLED(LIN_ADVANCE)
       static float extruder_advance_k, advance_ed_ratio,
-                   position_float[XYZE],
+                   position_float[NUM_AXIS], // Must be size NUM_AXIS because accessed with index E_AXIS
                    lin_dist_xy, lin_dist_e;
     #endif
 
@@ -419,7 +422,11 @@ class Planner {
      *  fr_mm_s     - (target) speed of the move
      *  extruder    - target extruder
      */
-    static void _buffer_steps(const int32_t (&target)[NUM_AXIS], float fr_mm_s, const uint8_t extruder);
+    static void _buffer_steps(const int32_t (&target)[NUM_AXIS], float fr_mm_s, const uint8_t extruder
+                              #if ENABLED(G6)
+                                , bool count_it
+                              #endif
+                             );
 
     /**
      * Planner::buffer_segment
@@ -432,12 +439,17 @@ class Planner {
      *              (for Hangprinter: a,b,c,d,e)
      *  fr_mm_s   - (target) speed of the move
      *  extruder  - target extruder
+     *  count_it  - specify if printer should remember this move in its counters (only if G6 enabled)
      */
     static void buffer_segment(const float &a, const float &b, const float &c,
                                #if ENABLED(HANGPRINTER)
                                  const float &d,
                                #endif
-                                 const float &e, const float &fr_mm_s, const uint8_t extruder);
+                               const float &e, const float &fr_mm_s, const uint8_t extruder
+                               #if ENABLED(G6)
+                                 , bool count_it = true
+                               #endif
+                               );
 
     static void _set_position_mm(const float &a, const float &b, const float &c,
                                  #if ENABLED(HANGPRINTER)

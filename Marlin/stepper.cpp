@@ -577,6 +577,9 @@ void Stepper::isr() {
         counter_E -= current_block->step_event_count;
         #if DISABLED(MIXING_EXTRUDER)
           // Don't step E here for mixing extruder
+          #if ENABLED(G6)
+            if(current_block->count_it)
+          #endif
           count_position[E_AXIS] += count_direction[E_AXIS];
           motor_direction(E_AXIS) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
         #endif
@@ -606,12 +609,25 @@ void Stepper::isr() {
       if (_COUNTER(AXIS) > 0) { _APPLY_STEP(AXIS)(!_INVERT_STEP_PIN(AXIS),0); }
 
     // Stop an active pulse, reset the Bresenham counter, update the position
-    #define PULSE_STOP(AXIS) \
-      if (_COUNTER(AXIS) > 0) { \
-        _COUNTER(AXIS) -= current_block->step_event_count; \
-        count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
-        _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
-      }
+    // Would be nicer with an if(ENABLED(G6)) within if(_COUNTER(AXIS) > 0)
+    // but I don't know if dead code removal is perfect on all compilers we want to target (tobben Jan 8, 2018)
+    #if ENABLED(G6)
+      #define PULSE_STOP(AXIS) \
+        if (_COUNTER(AXIS) > 0) { \
+          _COUNTER(AXIS) -= current_block->step_event_count; \
+          if(current_block->count_it) { \
+            count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
+          } \
+          _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
+        }
+    #else
+      #define PULSE_STOP(AXIS) \
+        if (_COUNTER(AXIS) > 0) { \
+          _COUNTER(AXIS) -= current_block->step_event_count; \
+          count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
+          _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS),0); \
+        }
+    #endif
 
     /**
      * Estimate the number of cycles that the stepper logic already takes
@@ -783,6 +799,9 @@ void Stepper::isr() {
         // Always step the single E axis
         if (counter_E > 0) {
           counter_E -= current_block->step_event_count;
+          #if ENABLED(G6)
+            if(current_block->count_it)
+          #endif
           count_position[E_AXIS] += count_direction[E_AXIS];
         }
         MIXING_STEPPERS_LOOP(j) {

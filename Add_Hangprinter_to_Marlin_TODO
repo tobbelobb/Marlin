@@ -113,6 +113,14 @@ Why is there something called "manual" feedrate, "manual" move axis, "manual" mo
 Does parser.value_axis_units(E_AXIS) really mean to say E_CART?
   Seems like it only makes a difference in inch mode
 
+How is position_float really used?
+  To calculate lin_dist_xy and lin_dist_e which is used to adjust extrusion of a move.
+
+What is a block->step_event_count used for?
+  They are passed on to counter_ABCDE/counter_XYZE
+
+Are Hangprinter's axes enabled on startup?
+
 OBSERVE: ---------------------------------------------
 Hangprinter orders its arrays like A_AXIS, B_AXIS, C_AXIS, D_AXIS, EHP_AXIS
 This affects ABCDE arrays
@@ -249,6 +257,9 @@ Always use Stepper::e_steps[E_STEPPERS] instead of counter_E.
   Right now it only uses e_steps if LIN_ADVANCE is enabled
   Separating movement axes from tool head axes is in general a good thing.
 
-Support E1_DUAL_STEPPER_DRIVERS
+Support E1_DUAL_STEPPER_DRIVERS/D_DUAL_STEPPER_DRIVERS
 
 axis_unit_factor references E_AXIS but I have no idea if it really means E_CART or E_AXIS
+
+Maybe calculate block->millimters from A_AXIS, B_AXIS, C_AXIS and only use D_AXIS if the ABC-version is zero?
+  block->millimeters seems to be used for speed calculations exclusively

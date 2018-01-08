@@ -485,6 +485,10 @@
   #define EXPERIMENTAL_AUTO_CALIBRATION_FEATURE
 #endif // HANGPRINTER
 
+// Activete G6: Direct Stepper Move
+// Super useful when Hangprinting
+#define G6
+
 //===========================================================================
 //============================== Endstop Settings ===========================
 //===========================================================================
