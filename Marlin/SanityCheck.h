@@ -638,9 +638,10 @@ static_assert(1 >= 0
 
 /**
  * Hangprinter requirements
- * TODO: Do some basic Hangprinter sanity checking here.
  */
-
+#if EXTRUDERS > 4
+  #error "Marlin supports a maximum of 4 EXTRUDERS when driving a Hangprinter."
+#endif
 
 /**
  * Probes

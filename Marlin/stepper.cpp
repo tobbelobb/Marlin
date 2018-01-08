@@ -238,8 +238,9 @@ volatile long Stepper::endstops_trigsteps[XYZ];
 
 /**
  * Hangprinter's mapping {A,B,C,D} <-> {X,Y,Z,E1} happens here.
- * If you have two extruders, search and replace E1->E2 in the below block
- * to place D motor on E2-pins and leave the E0 and E1-pins to the two extruders.
+ * If you have two extruders: {A,B,C,D} <-> {X,Y,Z,E2}
+ * ... etc up to max 4 extruders.
+ * Place D connector on your first "free" extruder output.
  */
 #if ENABLED(HANGPRINTER)
   #define A_ENABLE_PIN      X_ENABLE_PIN
@@ -263,15 +264,35 @@ volatile long Stepper::endstops_trigsteps[XYZ];
   #define C_APPLY_DIR(v,Q)  Z_APPLY_DIR(v,Q)
   #define C_APPLY_STEP(v,Q) Z_APPLY_STEP(v,Q)
 
-  #define E1_APPLY_DIR(v,Q) E1_DIR_WRITE(v)
-  #define E1_APPLY_STEP(v,Q) E1_STEP_WRITE(v)
-
-  #define D_ENABLE_PIN      E1_ENABLE_PIN
-  #define D_DIR_PIN         E1_DIR_PIN
-  #define D_STEP_PIN        E1_STEP_PIN
-  #define D_MS1_PIN         E1_MS1_PIN
-  #define D_APPLY_DIR(v,Q)  E1_APPLY_DIR(v,Q)
-  #define D_APPLY_STEP(v,Q) E1_APPLY_STEP(v,Q)
+  #if EXTRUDERS < 2
+    #define D_ENABLE_PIN      E1_ENABLE_PIN
+    #define D_DIR_PIN         E1_DIR_PIN
+    #define D_STEP_PIN        E1_STEP_PIN
+    #define D_MS1_PIN         E1_MS1_PIN
+    #define D_APPLY_DIR(v,Q)  E1_DIR_WRITE(v)
+    #define D_APPLY_STEP(v,Q) E1_STEP_WRITE(v)
+  #elif EXTRUDERS == 2
+    #define D_ENABLE_PIN      E2_ENABLE_PIN
+    #define D_DIR_PIN         E2_DIR_PIN
+    #define D_STEP_PIN        E2_STEP_PIN
+    #define D_MS1_PIN         E2_MS1_PIN
+    #define D_APPLY_DIR(v,Q)  E2_DIR_WRITE(v)
+    #define D_APPLY_STEP(v,Q) E2_STEP_WRITE(v)
+  #elif EXTRUDERS == 3
+    #define D_ENABLE_PIN      E3_ENABLE_PIN
+    #define D_DIR_PIN         E3_DIR_PIN
+    #define D_STEP_PIN        E3_STEP_PIN
+    #define D_MS1_PIN         E3_MS1_PIN
+    #define D_APPLY_DIR(v,Q)  E3_DIR_WRITE(v)
+    #define D_APPLY_STEP(v,Q) E3_STEP_WRITE(v)
+  #elif EXTRUDERS == 4
+    #define D_ENABLE_PIN      E4_ENABLE_PIN
+    #define D_DIR_PIN         E4_DIR_PIN
+    #define D_STEP_PIN        E4_STEP_PIN
+    #define D_MS1_PIN         E4_MS1_PIN
+    #define D_APPLY_DIR(v,Q)  E4_DIR_WRITE(v)
+    #define D_APPLY_STEP(v,Q) E4_STEP_WRITE(v)
+  #endif // EXTRUDERS
 #endif
 
 #if DISABLED(MIXING_EXTRUDER)
