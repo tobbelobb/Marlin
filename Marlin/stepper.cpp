@@ -599,7 +599,8 @@ void Stepper::isr() {
         if (_COUNTER(AXIS) > 0) { \
           _COUNTER(AXIS) -= current_block->step_event_count; \
           count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
-        }while(0)
+        } \
+      }while(0)
     #endif
 
     #define PULSE_STOP(AXIS) _APPLY_STEP(AXIS)(_INVERT_STEP_PIN(AXIS), 0)
