@@ -394,6 +394,9 @@ void report_current_position();
                anchor_D_z,
                delta_segments_per_second,
                line_lengths_origin[ABCD];
+
+  void recalc_hangprinter_settings();
+
   #define HANGPRINTER_IK(V) do {                             \
     line_lengths[A_AXIS] = sqrt(sq(anchor_A_z - V[Z_AXIS])   \
                               + sq(anchor_A_y - V[Y_AXIS])   \

@@ -6569,11 +6569,11 @@ inline void gcode_G92() {
 
   float ang_to_mm(float ang, const AxisEnum axis){
     #if ENABLED(LINE_BUILDUP_COMPENSATION_FEATURE)
-      float abs_step_in_origo = planner.k0[axis]*(sqrt(planner.k1[axis] + planner.k2[axis]*line_lengths_origin[axis]) - planner.sqrtk1[axis]);
+      float abs_step_in_origin = planner.k0[axis]*(sqrt(planner.k1[axis] + planner.k2[axis]*line_lengths_origin[axis]) - planner.sqrtk1[axis]);
     #else
-      float abs_step_in_origo = line_lengths_origo[axis]*planner.axis_steps_per_mm[axis];
+      float abs_step_in_origin = line_lengths_origin[axis]*planner.axis_steps_per_mm[axis];
     #endif
-    float c = abs_step_in_origo + ang*float(STEPS_PER_MOTOR_REVOLUTION)/360.0; // current step count
+    float c = abs_step_in_origin + ang*float(STEPS_PER_MOTOR_REVOLUTION)/360.0; // current step count
     #if defined(LINE_BUILDUP_COMPENSATION_FEATURE)
       // Inverse function found in planner.cpp, where target[AXIS_A] is calculated
       return ((c/planner.k0[axis] + planner.sqrtk1[axis])*(c/planner.k0[axis] + planner.sqrtk1[axis]) - planner.k1[axis])/planner.k2[axis] - line_lengths_origin[axis];
@@ -9619,8 +9619,7 @@ inline void gcode_M205() {
     if (parser.seen('O')) anchor_C_z                = parser.value_float();
     if (parser.seen('P')) anchor_D_z                = parser.value_float();
     if (parser.seen('S')) delta_segments_per_second = parser.value_float();
-    HANGPRINTER_IK_ORIGIN(line_lengths_origin);
-    SYNC_PLAN_POSITION_KINEMATIC(); // recalcs line lengths in case anchor was moved
+    recalc_hangprinter_settings();
   }
 
 #elif ENABLED(X_DUAL_ENDSTOPS) || ENABLED(Y_DUAL_ENDSTOPS) || ENABLED(Z_DUAL_ENDSTOPS)
@@ -13281,6 +13280,60 @@ void ok_to_send() {
 #endif // DELTA
 
 #if ENABLED(HANGPRINTER)
+
+  /**
+   * Recalculate factors used for hangprinter kinematics whenever
+   * settings have been changed (e.g., by M665).
+   */
+  void recalc_hangprinter_settings(){
+    HANGPRINTER_IK_ORIGIN(line_lengths_origin);
+    SYNC_PLAN_POSITION_KINEMATIC(); // recalcs line lengths in case anchor was moved
+
+    #if ENABLED(LINE_BUILDUP_COMPENSATION_FEATURE)
+      const uint8_t mech_adv_tmp[MOV_AXIS] = MECHANICAL_ADVANTAGE,
+                    actn_pts_tmp[MOV_AXIS] = ACTION_POINTS;
+      const uint16_t m_g_t_tmp[MOV_AXIS]   = MOTOR_GEAR_TEETH,
+                     s_g_t_tmp[MOV_AXIS]   = SPOOL_GEAR_TEETH;
+      const float mnt_l_tmp[MOV_AXIS]      = MOUNTED_LINE;
+      float s_r2_tmp[MOV_AXIS]             = SPOOL_RADII,
+            steps_per_unit_times_r_tmp[MOV_AXIS];
+      uint8_t nr_lines_dir_tmp[MOV_AXIS];
+
+      LOOP_MOV_AXIS(i){
+        steps_per_unit_times_r_tmp[i] = (float(mech_adv_tmp[i])*STEPS_PER_MOTOR_REVOLUTION*s_g_t_tmp[i])/(2*M_PI*m_g_t_tmp[i]);
+        nr_lines_dir_tmp[i] = mech_adv_tmp[i]*actn_pts_tmp[i];
+        s_r2_tmp[i] *= s_r2_tmp[i];
+        planner.k2[i] = -(float)nr_lines_dir_tmp[i]*SPOOL_BUILDUP_FACTOR;
+        planner.k0[i] = 2.0*steps_per_unit_times_r_tmp[i]/planner.k2[i];
+      }
+
+      // Assumes spools are mounted near D-anchor in ceiling
+      float line_on_spool_origin_tmp[MOV_AXIS];
+      #define HYP3D(x,y,z) SQRT(sq(x)+sq(y)+sq(z))
+      line_on_spool_origin_tmp[A_AXIS] = actn_pts_tmp[A_AXIS]*mnt_l_tmp[A_AXIS]
+                                         - actn_pts_tmp[A_AXIS]*HYPOT(anchor_A_y, anchor_D_z - anchor_A_z)
+                                         - nr_lines_dir_tmp[A_AXIS]*HYPOT(anchor_A_y, anchor_A_z);
+      line_on_spool_origin_tmp[B_AXIS] = actn_pts_tmp[B_AXIS]*mnt_l_tmp[B_AXIS]
+                                         - actn_pts_tmp[B_AXIS]*HYP3D(anchor_B_x, anchor_B_y, anchor_D_z - anchor_B_z)
+                                         - nr_lines_dir_tmp[B_AXIS]*HYP3D(anchor_B_x, anchor_B_y, anchor_B_z);
+      line_on_spool_origin_tmp[C_AXIS] = actn_pts_tmp[C_AXIS]*mnt_l_tmp[C_AXIS]
+                                         - actn_pts_tmp[C_AXIS]*HYP3D(anchor_C_x, anchor_C_y, anchor_D_z - anchor_C_z)
+                                         - nr_lines_dir_tmp[C_AXIS]*HYP3D(anchor_C_x, anchor_C_y, anchor_C_z);
+      line_on_spool_origin_tmp[D_AXIS] = actn_pts_tmp[D_AXIS]*(mnt_l_tmp[D_AXIS] - anchor_D_z);
+
+      LOOP_MOV_AXIS(i){
+        planner.axis_steps_per_mm[i] =
+          steps_per_unit_times_r_tmp[i]/
+            sqrt(SPOOL_BUILDUP_FACTOR*line_on_spool_origin_tmp[i] + s_r2_tmp[i]);
+        planner.k1[i] = SPOOL_BUILDUP_FACTOR *
+          (line_on_spool_origin_tmp[i] + nr_lines_dir_tmp[i]*line_lengths_origin[i]) + s_r2_tmp[i];
+
+        planner.sqrtk1[i] = sqrt(planner.k1[i]);
+      }
+      planner.axis_steps_per_mm[E_AXIS] = DEFAULT_E_AXIS_STEPS_PER_UNIT;
+    #endif
+  }
+
   /**
    * Hangprinter inverse kinematics
    */
