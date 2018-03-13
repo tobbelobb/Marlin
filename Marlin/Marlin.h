@@ -596,7 +596,7 @@ void do_blocking_move_to_xy(const float &rx, const float &ry, const float &fr_mm
       return HYPOT2(rx, ry) <= sq(DELTA_PRINTABLE_RADIUS - inset);
     #elif ENABLED(HANGPRINTER)
       // TODO: This is over simplified. Hangprinter's build volume is _not_ cylindrical.
-      return HYPOT2(rx, ry) <= sq(HANGPRINTER_PRINTABLE_RADIUS);
+      return HYPOT2(rx, ry) <= sq(HANGPRINTER_PRINTABLE_RADIUS - inset);
     #elif IS_SCARA
       const float R2 = HYPOT2(rx - SCARA_OFFSET_X, ry - SCARA_OFFSET_Y);
       return (
