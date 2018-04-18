@@ -485,7 +485,7 @@
     /* Total length of lines on each spool
      * Default assumes all nine lines are cut to length 7500 mm.
      * Change to whatever length you have cut your different lines to. */
-    #define MOUNTED_LINE { 7500.0, 7500.0, 7500.0, 7500.0 }
+    #define MOUNTED_LINE { 7500.0, 7500.0, 7500.0, 4000.0 }
 
     // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
     #define SPOOL_RADII { 55.0, 55.0, 55.0, 55.0 }
