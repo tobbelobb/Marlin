@@ -11239,7 +11239,7 @@ inline void gcode_M502() {
                        #else
                          axis_codes
                        #endif
-                       [i]) {
+                       [i])) {
 
       report = false;
       switch (i) {
