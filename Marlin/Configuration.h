@@ -325,9 +325,18 @@
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
 
   // Hangprinter (Volcano, e3d V6, RAMPS, 120W power supply)
-  #define  DEFAULT_Kp 39.76
-  #define  DEFAULT_Ki 3.26
-  #define  DEFAULT_Kd 121.18
+  //#define  DEFAULT_Kp 39.76
+  //#define  DEFAULT_Ki 3.26
+  //#define  DEFAULT_Kd 121.18
+
+  // Hangprinter (Super Volcano, E3D Titan Aero, RUMBA, 250W 24V PSU)
+  // No sock. Alu block, brass nozzle.
+  //#define DEFAULT_Kp 15.37
+  //#define DEFAULT_Ki 1.05
+  //#define DEFAULT_Kd 56.02
+  #define DEFAULT_Kp 27.79
+  #define DEFAULT_Ki 3.69
+  #define DEFAULT_Kd 52.36
 
 #endif // PIDTEMP
 
@@ -422,7 +431,7 @@
 //#define COREZY
 
 // This value is used whether if LINE_BUILDUP_COMPENSATION_FEATURE is enabled or not.
-#define DEFAULT_E_AXIS_STEPS_PER_UNIT 410.0 // 410.0 set quite at random
+#define DEFAULT_E_AXIS_STEPS_PER_UNIT 205.0 // 410.0 set quite at random
 
 //===========================================================================
 //============================== Hangprinter Settings =======================
@@ -434,15 +443,34 @@
   #define HANGPRINTER_PRINTABLE_RADIUS 3000.0
   // Anchor position coordinates
   // ANCHOR_A_X = 0 by definition. Left out of all calculations
-  #define ANCHOR_A_Y -2163
-  #define ANCHOR_A_Z   -75
-  #define ANCHOR_B_X -1841
-  #define ANCHOR_B_Y   741
-  #define ANCHOR_B_Z   -75
-  #define ANCHOR_C_X  1639
-  #define ANCHOR_C_Y  1404
-  #define ANCHOR_C_Z   -75
-  #define ANCHOR_D_Z  3250
+//#define ANCHOR_A_Y -3727
+//#define ANCHOR_A_Z   -17
+//#define ANCHOR_B_X  3031
+//#define ANCHOR_B_Y  2742
+//#define ANCHOR_B_Z  -102
+//#define ANCHOR_C_X -3033
+//#define ANCHOR_C_Y  2576
+//#define ANCHOR_C_Z  -149
+//#define ANCHOR_D_Z  3619
+//#define ANCHOR_A_Y -3845
+//#define ANCHOR_A_Z   -51
+//#define ANCHOR_B_X  3064
+//#define ANCHOR_B_Y  2776
+//#define ANCHOR_B_Z  -286
+//#define ANCHOR_C_X -3215
+//#define ANCHOR_C_Y  2717
+//#define ANCHOR_C_Z  -174
+//#define ANCHOR_D_Z  3818
+  #define ANCHOR_A_Y -3756
+  #define ANCHOR_A_Z   -73
+  #define ANCHOR_B_X  2779
+  #define ANCHOR_B_Y  2471
+  #define ANCHOR_B_Z  -200
+  #define ANCHOR_C_X -3039
+  #define ANCHOR_C_Y  2595
+  #define ANCHOR_C_Z  -107
+  #define ANCHOR_D_Z  3957
+
 
   // Comment this out if you plan to place your anchors at unconventional places
   // See SanityCheck.h for exact definition of the tested convention
@@ -485,7 +513,7 @@
     /* Total length of lines on each spool
      * Default assumes all nine lines are cut to length 7500 mm.
      * Change to whatever length you have cut your different lines to. */
-    #define MOUNTED_LINE { 9730.0, 9730.0, 9730.0, 4490.0 }
+    #define MOUNTED_LINE { 12730.0, 12730.0, 12730.0, 4490.0 }
 
     // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
     #define SPOOL_RADII { 54.61, 54.57, 54.62, 54.65 }
@@ -614,7 +642,7 @@
  * Override with M203
  *                                        A    B    C    D   E
  */
-#define DEFAULT_MAX_FEEDRATE          { 500, 500, 500, 300, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 200, 200, 200, 100, 25 }
 
 /**
  * Default Max Acceleration (change/s) change = mm/s
