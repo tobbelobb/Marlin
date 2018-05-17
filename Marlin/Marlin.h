@@ -199,6 +199,21 @@ extern const char axis_codes[XYZE];
 
 #endif // !MIXING_EXTRUDER
 
+#if ENABLED(HANGPRINTER)
+  #define enable_A() enable_X()
+  #define enable_B() enable_Y()
+  #define enable_C() enable_Z()
+  #if EXTRUDERS == 1
+    #define enable_D() E1_ENABLE_WRITE(E_ENABLE_ON)
+  #elif EXTRUDERS == 2
+    #define enable_D() E2_ENABLE_WRITE(E_ENABLE_ON)
+  #elif EXTRUDERS == 3
+    #define enable_D() E3_ENABLE_WRITE(E_ENABLE_ON)
+  #elif EXTRUDERS == 4
+    #define enable_D() E4_ENABLE_WRITE(E_ENABLE_ON)
+  #endif
+#endif
+
 #if ENABLED(G38_PROBE_TARGET)
   extern bool G38_move,        // flag to tell the interrupt handler that a G38 command is being run
               G38_endstop_hit; // flag from the interrupt handler to indicate if the endstop went active
