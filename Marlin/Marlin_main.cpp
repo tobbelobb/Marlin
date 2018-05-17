@@ -14333,14 +14333,25 @@ void enable_all_steppers() {
   #if ENABLED(AUTO_POWER_CONTROL)
     powerManager.power_on();
   #endif
-  enable_X();
-  enable_Y();
-  enable_Z();
-  enable_E0();
-  enable_E1();
-  enable_E2();
-  enable_E3();
-  enable_E4();
+  #if ENABLED(HANGPRINTER)
+    enable_A();
+    enable_B();
+    enable_C();
+    enable_D();
+    enable_E0();
+    enable_E1();
+    enable_E2();
+    enable_E3();
+  #else
+    enable_X();
+    enable_Y();
+    enable_Z();
+    enable_E0();
+    enable_E1();
+    enable_E2();
+    enable_E3();
+    enable_E4();
+  #endif
 }
 
 void disable_e_stepper(const uint8_t e) {
@@ -14924,6 +14935,9 @@ void setup() {
 
   #if ENABLED(USE_WATCHDOG)
     watchdog_init();
+  #endif
+  #if ENABLED(HANGPRINTER)
+    enable_all_steppers();
   #endif
 }
 
