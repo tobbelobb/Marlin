@@ -1223,33 +1223,35 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE && Y_MAX_LENGTH >= Y_BED_SIZE,
 #define _PLUG_UNUSED_TEST(AXIS,PLUG) (DISABLED(USE_##PLUG##MIN_PLUG) && DISABLED(USE_##PLUG##MAX_PLUG) && !(ENABLED(AXIS##_DUAL_ENDSTOPS) && WITHIN(AXIS##2_USE_ENDSTOP, _##PLUG##MAX_, _##PLUG##MIN_)))
 #define _AXIS_PLUG_UNUSED_TEST(AXIS) (_PLUG_UNUSED_TEST(AXIS,X) && _PLUG_UNUSED_TEST(AXIS,Y) && _PLUG_UNUSED_TEST(AXIS,Z))
 
-// At least 3 endstop plugs must be used
-#if _AXIS_PLUG_UNUSED_TEST(X)
-  #error "You must enable USE_XMIN_PLUG or USE_XMAX_PLUG."
-#endif
-#if _AXIS_PLUG_UNUSED_TEST(Y)
-  #error "You must enable USE_YMIN_PLUG or USE_YMAX_PLUG."
-#endif
-#if _AXIS_PLUG_UNUSED_TEST(Z)
-  #error "You must enable USE_ZMIN_PLUG or USE_ZMAX_PLUG."
-#endif
-
-// Delta and Cartesian use 3 homing endstops
-#if !IS_SCARA
-  #if X_HOME_DIR < 0 && DISABLED(USE_XMIN_PLUG)
-    #error "Enable USE_XMIN_PLUG when homing X to MIN."
-  #elif X_HOME_DIR > 0 && DISABLED(USE_XMAX_PLUG)
-    #error "Enable USE_XMAX_PLUG when homing X to MAX."
-  #elif Y_HOME_DIR < 0 && DISABLED(USE_YMIN_PLUG)
-    #error "Enable USE_YMIN_PLUG when homing Y to MIN."
-  #elif Y_HOME_DIR > 0 && DISABLED(USE_YMAX_PLUG)
-    #error "Enable USE_YMAX_PLUG when homing Y to MAX."
+#if DISABLED(HANGPRINTER)
+  // At least 3 endstop plugs must be used
+  #if _AXIS_PLUG_UNUSED_TEST(X)
+    #error "You must enable USE_XMIN_PLUG or USE_XMAX_PLUG."
   #endif
-#endif
-#if Z_HOME_DIR < 0 && DISABLED(USE_ZMIN_PLUG)
-  #error "Enable USE_ZMIN_PLUG when homing Z to MIN."
-#elif Z_HOME_DIR > 0 && DISABLED(USE_ZMAX_PLUG)
-  #error "Enable USE_ZMAX_PLUG when homing Z to MAX."
+  #if _AXIS_PLUG_UNUSED_TEST(Y)
+    #error "You must enable USE_YMIN_PLUG or USE_YMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(Z)
+    #error "You must enable USE_ZMIN_PLUG or USE_ZMAX_PLUG."
+  #endif
+
+  // Delta and Cartesian use 3 homing endstops
+  #if !IS_SCARA
+    #if X_HOME_DIR < 0 && DISABLED(USE_XMIN_PLUG)
+      #error "Enable USE_XMIN_PLUG when homing X to MIN."
+    #elif X_HOME_DIR > 0 && DISABLED(USE_XMAX_PLUG)
+      #error "Enable USE_XMAX_PLUG when homing X to MAX."
+    #elif Y_HOME_DIR < 0 && DISABLED(USE_YMIN_PLUG)
+      #error "Enable USE_YMIN_PLUG when homing Y to MIN."
+    #elif Y_HOME_DIR > 0 && DISABLED(USE_YMAX_PLUG)
+      #error "Enable USE_YMAX_PLUG when homing Y to MAX."
+    #endif
+  #endif
+  #if Z_HOME_DIR < 0 && DISABLED(USE_ZMIN_PLUG)
+    #error "Enable USE_ZMIN_PLUG when homing Z to MIN."
+  #elif Z_HOME_DIR > 0 && DISABLED(USE_ZMAX_PLUG)
+    #error "Enable USE_ZMAX_PLUG when homing Z to MAX."
+  #endif
 #endif
 
 // Dual endstops requirements
