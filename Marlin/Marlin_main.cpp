@@ -13287,8 +13287,6 @@ void ok_to_send() {
    */
   void recalc_hangprinter_settings(){
     HANGPRINTER_IK_ORIGIN(line_lengths_origin);
-    SYNC_PLAN_POSITION_KINEMATIC(); // recalcs line lengths in case anchor was moved
-
     #if ENABLED(LINE_BUILDUP_COMPENSATION_FEATURE)
       const uint8_t mech_adv_tmp[MOV_AXIS] = MECHANICAL_ADVANTAGE,
                     actn_pts_tmp[MOV_AXIS] = ACTION_POINTS;
@@ -13332,6 +13330,7 @@ void ok_to_send() {
       }
       planner.axis_steps_per_mm[E_AXIS] = DEFAULT_E_AXIS_STEPS_PER_UNIT;
     #endif
+    SYNC_PLAN_POSITION_KINEMATIC(); // recalcs line lengths in case anchor was moved
   }
 
   /**
