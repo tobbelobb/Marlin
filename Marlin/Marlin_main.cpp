@@ -14937,7 +14937,10 @@ void setup() {
     watchdog_init();
   #endif
   #if ENABLED(HANGPRINTER)
-    enable_all_steppers();
+    enable_A();
+    enable_B();
+    enable_C();
+    enable_D();
   #endif
 }
 
