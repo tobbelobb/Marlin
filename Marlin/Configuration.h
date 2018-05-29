@@ -334,9 +334,15 @@
   //#define DEFAULT_Kp 15.37
   //#define DEFAULT_Ki 1.05
   //#define DEFAULT_Kd 56.02
-  #define DEFAULT_Kp 27.79
-  #define DEFAULT_Ki 3.69
-  #define DEFAULT_Kd 52.36
+  //#define DEFAULT_Kp 27.79
+  //#define DEFAULT_Ki 3.69
+  //#define DEFAULT_Kd 52.36
+  //#define DEFAULT_Kp 10.55
+  //#define DEFAULT_Ki 1.87
+  //#define DEFAULT_Kd 14.91
+  #define DEFAULT_Kp 9.84
+  #define DEFAULT_Ki 1.82
+  #define DEFAULT_Kd 13.30
 
 #endif // PIDTEMP
 
@@ -461,16 +467,35 @@
 //#define ANCHOR_C_Y  2717
 //#define ANCHOR_C_Z  -174
 //#define ANCHOR_D_Z  3818
-  #define ANCHOR_A_Y -3756
-  #define ANCHOR_A_Z   -73
-  #define ANCHOR_B_X  2779
-  #define ANCHOR_B_Y  2471
-  #define ANCHOR_B_Z  -200
-  #define ANCHOR_C_X -3039
-  #define ANCHOR_C_Y  2595
-  #define ANCHOR_C_Z  -107
-  #define ANCHOR_D_Z  3957
-
+//#define ANCHOR_A_Y -3756
+//#define ANCHOR_A_Z   -73
+//#define ANCHOR_B_X  2779
+//#define ANCHOR_B_Y  2471
+//#define ANCHOR_B_Z  -200
+//#define ANCHOR_C_X -3039
+//#define ANCHOR_C_Y  2595
+//#define ANCHOR_C_Z  -107
+//#define ANCHOR_D_Z  3957
+//#define ANCHOR_A_Y -3895
+//#define ANCHOR_A_Z   -97
+//#define ANCHOR_B_X  2794
+//#define ANCHOR_B_Y  2468
+//#define ANCHOR_B_Z  -221
+//#define ANCHOR_C_X -3263
+//#define ANCHOR_C_Y  2802
+//#define ANCHOR_C_Z  -175
+//#define ANCHOR_D_Z  3905
+//
+// Doubling lines and recalibrating
+#define ANCHOR_A_Y -4032
+#define ANCHOR_A_Z   -39
+#define ANCHOR_B_X  3008
+#define ANCHOR_B_Y  2801
+#define ANCHOR_B_Z  -214
+#define ANCHOR_C_X -2777
+#define ANCHOR_C_Y  2353
+#define ANCHOR_C_Z  -149
+#define ANCHOR_D_Z  3570
 
   // Comment this out if you plan to place your anchors at unconventional places
   // See SanityCheck.h for exact definition of the tested convention
@@ -495,7 +520,7 @@
   #define LINE_BUILDUP_COMPENSATION_FEATURE
   #if ENABLED(LINE_BUILDUP_COMPENSATION_FEATURE)
     // Allows gearing down with pulley principle
-    #define MECHANICAL_ADVANTAGE { 1, 1, 1, 1 }
+    #define MECHANICAL_ADVANTAGE { 2, 2, 2, 1 }
 
     // The point where line meets mover is called action point
     #define ACTION_POINTS { 2, 2, 2, 3 }
@@ -513,7 +538,7 @@
     /* Total length of lines on each spool
      * Default assumes all nine lines are cut to length 7500 mm.
      * Change to whatever length you have cut your different lines to. */
-    #define MOUNTED_LINE { 12730.0, 12730.0, 12730.0, 4490.0 }
+    #define MOUNTED_LINE { 17730.0, 17730.0, 17730.0, 4490.0 }
 
     // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
     #define SPOOL_RADII { 54.61, 54.57, 54.62, 54.65 }
@@ -648,9 +673,9 @@
  * Default Max Acceleration (change/s) change = mm/s
  * (Maximum start speed for accelerated moves)
  * Override with M201
- *                                         A     B     C      D     E
+ *                                        A    B    C    D     E
  */
-#define DEFAULT_MAX_ACCELERATION      { 1000, 1000, 1000, 1000, 10000 }
+#define DEFAULT_MAX_ACCELERATION      { 500, 500, 500, 500, 5000 }
 
 /**
  * Default Acceleration (change/s) change = mm/s
@@ -660,9 +685,9 @@
  *   M204 R    Retract Acceleration
  *   M204 T    Travel Acceleration
  */
-#define DEFAULT_ACCELERATION          900    // X, Y, Z and E acceleration for printing moves
+#define DEFAULT_ACCELERATION          500    // X, Y, Z and E acceleration for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   900    // X, Y, Z acceleration for travel (non printing) moves
+#define DEFAULT_TRAVEL_ACCELERATION   500    // X, Y, Z acceleration for travel (non printing) moves
 
 /**
  * Default Jerk (mm/s)
