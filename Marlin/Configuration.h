@@ -533,7 +533,7 @@
      * Default buildup factor for 0.50 mm FireLine: 0.0078
      * Default buildup factor for 0.39 mm FireLine: 0.00475
      * In practice you might want to compensate a bit more or a bit less */
-    #define SPOOL_BUILDUP_FACTOR 0.0078
+    #define SPOOL_BUILDUP_FACTOR 0.007
 
     /* Total length of lines on each spool
      * Default assumes all nine lines are cut to length 7500 mm.
@@ -667,7 +667,7 @@
  * Override with M203
  *                                        A    B    C    D   E
  */
-#define DEFAULT_MAX_FEEDRATE          { 200, 200, 200, 100, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 100, 100, 100, 100, 25 }
 
 /**
  * Default Max Acceleration (change/s) change = mm/s
