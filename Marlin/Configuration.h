@@ -89,12 +89,12 @@
 // The following define selects which electronics board you have.
 // Please choose the name from boards.h that matches your setup
 #ifndef MOTHERBOARD
-  #define MOTHERBOARD BOARD_RUMBA
+  #define MOTHERBOARD BOARD_RAMPS_14_EFB
 #endif
 
 // Optional custom name for your RepStrap or other custom machine
 // Displayed in the LCD "Ready" message
-#define CUSTOM_MACHINE_NAME "The_E3D_Hangprinter"
+#define CUSTOM_MACHINE_NAME "HAW2_Hangprinter"
 
 // Define this to set a unique identifier for this printer, (Used by some programs to differentiate between machines)
 // You can use an online service to generate a random UUID. (eg http://www.uuidgenerator.net/version4)
@@ -256,7 +256,7 @@
  *
  * :{ '0': "Not used", '1':"100k / 4.7k - EPCOS", '2':"200k / 4.7k - ATC Semitec 204GT-2", '3':"Mendel-parts / 4.7k", '4':"10k !! do not use for a hotend. Bad resolution at high temp. !!", '5':"100K / 4.7k - ATC Semitec 104GT-2 (Used in ParCan & J-Head)", '6':"100k / 4.7k EPCOS - Not as accurate as Table 1", '7':"100k / 4.7k Honeywell 135-104LAG-J01", '8':"100k / 4.7k 0603 SMD Vishay NTCS0603E3104FXT", '9':"100k / 4.7k GE Sensing AL03006-58.2K-97-G1", '10':"100k / 4.7k RS 198-961", '11':"100k / 4.7k beta 3950 1%", '12':"100k / 4.7k 0603 SMD Vishay NTCS0603E3104FXT (calibrated for Makibox hot bed)", '13':"100k Hisens 3950  1% up to 300°C for hotend 'Simple ONE ' & hotend 'All In ONE'", '20':"PT100 (Ultimainboard V2.x)", '51':"100k / 1k - EPCOS", '52':"200k / 1k - ATC Semitec 204GT-2", '55':"100k / 1k - ATC Semitec 104GT-2 (Used in ParCan & J-Head)", '60':"100k Maker's Tool Works Kapton Bed Thermistor beta=3950", '66':"Dyze Design 4.7M High Temperature thermistor", '70':"the 100K thermistor found in the bq Hephestos 2", '71':"100k / 4.7k Honeywell 135-104LAF-J01", '147':"Pt100 / 4.7k", '1047':"Pt1000 / 4.7k", '110':"Pt100 / 1k (non-standard)", '1010':"Pt1000 / 1k (non standard)", '-3':"Thermocouple + MAX31855 (only for sensor 0)", '-2':"Thermocouple + MAX6675 (only for sensor 0)", '-1':"Thermocouple + AD595",'998':"Dummy 1", '999':"Dummy 2" }
  */
-#define TEMP_SENSOR_0 20
+#define TEMP_SENSOR_0 5
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
@@ -325,9 +325,9 @@
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
 
   // Hangprinter (Volcano, e3d V6, RAMPS, 120W power supply)
-  //#define  DEFAULT_Kp 39.76
-  //#define  DEFAULT_Ki 3.26
-  //#define  DEFAULT_Kd 121.18
+  #define  DEFAULT_Kp 39.76
+  #define  DEFAULT_Ki 3.26
+  #define  DEFAULT_Kd 121.18
 
   // Hangprinter (Super Volcano, E3D Titan Aero, RUMBA, 250W 24V PSU)
   // No sock. Alu block, brass nozzle.
@@ -340,9 +340,9 @@
   //#define DEFAULT_Kp 10.55
   //#define DEFAULT_Ki 1.87
   //#define DEFAULT_Kd 14.91
-  #define DEFAULT_Kp 9.84
-  #define DEFAULT_Ki 1.82
-  #define DEFAULT_Kd 13.30
+  //#define DEFAULT_Kp 9.84
+  //#define DEFAULT_Ki 1.82
+  //#define DEFAULT_Kd 13.30
 
 #endif // PIDTEMP
 
@@ -449,53 +449,15 @@
   #define HANGPRINTER_PRINTABLE_RADIUS 3000.0
   // Anchor position coordinates
   // ANCHOR_A_X = 0 by definition. Left out of all calculations
-//#define ANCHOR_A_Y -3727
-//#define ANCHOR_A_Z   -17
-//#define ANCHOR_B_X  3031
-//#define ANCHOR_B_Y  2742
-//#define ANCHOR_B_Z  -102
-//#define ANCHOR_C_X -3033
-//#define ANCHOR_C_Y  2576
-//#define ANCHOR_C_Z  -149
-//#define ANCHOR_D_Z  3619
-//#define ANCHOR_A_Y -3845
-//#define ANCHOR_A_Z   -51
-//#define ANCHOR_B_X  3064
-//#define ANCHOR_B_Y  2776
-//#define ANCHOR_B_Z  -286
-//#define ANCHOR_C_X -3215
-//#define ANCHOR_C_Y  2717
-//#define ANCHOR_C_Z  -174
-//#define ANCHOR_D_Z  3818
-//#define ANCHOR_A_Y -3756
-//#define ANCHOR_A_Z   -73
-//#define ANCHOR_B_X  2779
-//#define ANCHOR_B_Y  2471
-//#define ANCHOR_B_Z  -200
-//#define ANCHOR_C_X -3039
-//#define ANCHOR_C_Y  2595
-//#define ANCHOR_C_Z  -107
-//#define ANCHOR_D_Z  3957
-//#define ANCHOR_A_Y -3895
-//#define ANCHOR_A_Z   -97
-//#define ANCHOR_B_X  2794
-//#define ANCHOR_B_Y  2468
-//#define ANCHOR_B_Z  -221
-//#define ANCHOR_C_X -3263
-//#define ANCHOR_C_Y  2802
-//#define ANCHOR_C_Z  -175
-//#define ANCHOR_D_Z  3905
-//
-// Doubling lines and recalibrating
-#define ANCHOR_A_Y -4032
-#define ANCHOR_A_Z   -39
-#define ANCHOR_B_X  3008
-#define ANCHOR_B_Y  2801
-#define ANCHOR_B_Z  -214
-#define ANCHOR_C_X -2777
-#define ANCHOR_C_Y  2353
-#define ANCHOR_C_Z  -149
-#define ANCHOR_D_Z  3570
+  #define ANCHOR_A_Y -4032
+  #define ANCHOR_A_Z   -39
+  #define ANCHOR_B_X  3008
+  #define ANCHOR_B_Y  2801
+  #define ANCHOR_B_Z  -214
+  #define ANCHOR_C_X -2777
+  #define ANCHOR_C_Y  2353
+  #define ANCHOR_C_Z  -149
+  #define ANCHOR_D_Z  3570
 
   // Comment this out if you plan to place your anchors at unconventional places
   // See SanityCheck.h for exact definition of the tested convention
@@ -532,16 +494,16 @@
      *
      * Default buildup factor for 0.50 mm FireLine: 0.0078
      * Default buildup factor for 0.39 mm FireLine: 0.00475
+     * Default buildup factor for 0.32 mm FireLine: 0.0032
      * In practice you might want to compensate a bit more or a bit less */
-    #define SPOOL_BUILDUP_FACTOR 0.007
+    #define SPOOL_BUILDUP_FACTOR 0.003
 
     /* Total length of lines on each spool
-     * Default assumes all nine lines are cut to length 7500 mm.
      * Change to whatever length you have cut your different lines to. */
     #define MOUNTED_LINE { 17730.0, 17730.0, 17730.0, 4490.0 }
 
     // Measuring your spool radii and adjusting this number will improve your Hangprinter's precision
-    #define SPOOL_RADII { 54.61, 54.57, 54.62, 54.65 }
+    #define SPOOL_RADII { 54.87, 54.87, 54.87, 54.87 }
 
     // Used for calculating steps per spool radian and the static steps per mm used in acceleration planning
     #define MOTOR_GEAR_TEETH { 10, 10, 10, 10 }
